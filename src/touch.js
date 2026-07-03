@@ -6,6 +6,13 @@ const JOY_RADIUS = 52;      // 摇杆最大偏移（px）
 const LOOK_SENS = 2.4;      // 拖动 -> 视角增量倍率
 const DEADZONE = 0.18;
 
+// 触觉反馈（Android 生效，iOS 静默忽略）
+function buzz(ms = 8) {
+  try {
+    if (navigator.vibrate) navigator.vibrate(ms);
+  } catch { /* 忽略 */ }
+}
+
 export class TouchControls {
   constructor(input, canvas, hooks) {
     this.input = input;
@@ -33,6 +40,7 @@ export class TouchControls {
     const sprintBtn = document.getElementById('tbtn-sprint');
     sprintBtn.addEventListener('touchstart', (e) => {
       e.preventDefault();
+      buzz(12);
       input.virtual.sprint = !input.virtual.sprint;
       sprintBtn.classList.toggle('on', input.virtual.sprint);
     }, { passive: false });
@@ -121,6 +129,7 @@ export class TouchControls {
     const el = document.getElementById(id);
     el.addEventListener('touchstart', (e) => {
       e.preventDefault();
+      buzz();
       setter(true);
       el.classList.add('on');
     }, { passive: false });
@@ -135,13 +144,19 @@ export class TouchControls {
 
   bindTap(id, fn) {
     const el = document.getElementById(id);
+    const flash = () => {
+      el.classList.add('on');
+      setTimeout(() => el.classList.remove('on'), 140);
+    };
     el.addEventListener('touchstart', (e) => {
       e.preventDefault();
+      buzz(12);
+      flash();
       fn();
     }, { passive: false });
     // 桌面调试也可点
     el.addEventListener('click', (e) => {
-      if (e.detail !== 0) fn();
+      if (e.detail !== 0) { flash(); fn(); }
     });
   }
 }

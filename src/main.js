@@ -294,12 +294,14 @@ function openInventory() {
   inventoryOpen = true;
   refreshInvUI();
   hud.showInventory(true);
+  document.body.classList.add('inv-open');
   if (touchMode) input.clear(); // 世界继续运行，仅冻结输入
   else document.exitPointerLock();
 }
 function closeInventory(relock) {
   inventoryOpen = false;
   hud.showInventory(false);
+  document.body.classList.remove('inv-open');
   if (touchMode) return; // 触屏保持运行状态
   if (relock) requestLock();
   else overlay.classList.remove('hidden');

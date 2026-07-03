@@ -190,45 +190,133 @@ body { touch-action: none; }
 /* ---------- 触屏控制 ---------- */
 #touchui { display: none; }
 body.touch.playing #touchui { display: block; }
+body.touch.inv-open #touchui { display: none; } /* 背包打开时收起，防误触 */
 body.touch #hotbar, body.touch .slot { pointer-events: auto; }
 body.touch #tips, body.touch #debug { display: none; }
+/* iPhone 刘海/圆角安全区 */
+body.touch #hotbar { bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+body.touch #stats { bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
 
 #touchui > * {
   position: fixed; z-index: 6;
   touch-action: none;
+  user-select: none; -webkit-user-select: none;
 }
+
+/* 虚拟摇杆：玻璃盘面 + 上下方向刻度 + 立体拇指钮 */
 #joy {
-  left: 20px; bottom: 96px;
-  width: 132px; height: 132px;
+  left: calc(18px + env(safe-area-inset-left, 0px));
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  width: 140px; height: 140px;
   border-radius: 50%;
-  background: rgba(20, 20, 28, 0.35);
-  border: 3px solid rgba(255, 255, 255, 0.25);
+  background: radial-gradient(circle, rgba(26, 28, 40, 0.10) 42%, rgba(26, 28, 40, 0.48) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.30);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
 }
+#joy::before, #joy::after {
+  content: ''; position: absolute; left: 50%;
+  border: 5px solid transparent;
+  transform: translateX(-50%);
+  opacity: 0.45;
+}
+#joy::before { top: 8px; border-bottom: 7px solid #fff; border-top: 0; }
+#joy::after  { bottom: 8px; border-top: 7px solid #fff; border-bottom: 0; }
 #joy-knob {
   position: absolute; left: 50%; top: 50%;
-  width: 56px; height: 56px;
-  margin: -28px 0 0 -28px;
+  width: 58px; height: 58px;
+  margin: -29px 0 0 -29px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  border: 3px solid rgba(255, 255, 255, 0.45);
+  background: radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.60), rgba(255, 255, 255, 0.18) 65%);
+  border: 2px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
 }
+
+/* 动作按键：圆形玻璃感 + 按压缩放反馈 */
 .tbtn {
   width: 64px; height: 64px;
-  border-radius: 14px;
-  background: rgba(20, 20, 28, 0.4);
-  border: 3px solid rgba(255, 255, 255, 0.3);
-  color: #fff; font-size: 20px; font-weight: bold;
+  border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  text-shadow: 1px 1px 0 #000;
+  background: radial-gradient(circle at 35% 28%, rgba(64, 70, 90, 0.55), rgba(14, 16, 24, 0.62));
+  border: 2px solid rgba(255, 255, 255, 0.38);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  color: #fff; font-size: 24px; font-weight: bold;
+  text-shadow: 0 2px 3px rgba(0, 0, 0, 0.7);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  transition: transform 0.07s, background-color 0.07s, border-color 0.07s;
 }
-.tbtn.on { background: rgba(255, 255, 255, 0.35); border-color: #fff; }
-.tbtn.small { width: 52px; height: 52px; font-size: 16px; }
-#tbtn-sprint { left: 60px; bottom: 244px; }
-#tbtn-jump  { right: 22px; bottom: 108px; }
-#tbtn-mine  { right: 104px; bottom: 156px; }
-#tbtn-place { right: 104px; bottom: 76px; }
-#tbtn-inv   { right: 16px; top: 56px; width: 58px; height: 44px; font-size: 14px; }
-#tbtn-pause { right: 16px; top: 8px; width: 58px; height: 44px; }
+.tbtn.on {
+  transform: scale(0.88);
+  background: rgba(255, 255, 255, 0.34);
+  border-color: #fff;
+}
+
+/* 大小分级：挖=主键最大，跳其次，放略小；描边按功能微着色 */
+#tbtn-mine {
+  right: calc(104px + env(safe-area-inset-right, 0px));
+  bottom: calc(162px + env(safe-area-inset-bottom, 0px));
+  width: 76px; height: 76px; font-size: 28px;
+  border-color: rgba(255, 196, 120, 0.55);
+}
+#tbtn-place {
+  right: calc(114px + env(safe-area-inset-right, 0px));
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  width: 60px; height: 60px; font-size: 21px;
+  border-color: rgba(150, 220, 150, 0.50);
+}
+#tbtn-jump {
+  right: calc(20px + env(safe-area-inset-right, 0px));
+  bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  width: 72px; height: 72px;
+  border-color: rgba(150, 190, 255, 0.55);
+}
+
+/* 疾跑：胶囊开关 + 状态指示灯 */
+#tbtn-sprint {
+  left: calc(58px + env(safe-area-inset-left, 0px));
+  bottom: calc(252px + env(safe-area-inset-bottom, 0px));
+  width: 64px; height: 42px; border-radius: 21px;
+  font-size: 16px;
+}
+#tbtn-sprint::before {
+  content: ''; width: 7px; height: 7px; border-radius: 50%;
+  background: #8a8a92; margin-right: 6px;
+  flex: none;
+}
+#tbtn-sprint.on {
+  transform: none;
+  background: rgba(90, 200, 110, 0.30);
+  border-color: #7fe08f;
+}
+#tbtn-sprint.on::before { background: #7fe08f; box-shadow: 0 0 6px #7fe08f; }
+
+/* 顶部功能键：圆角方块，弱化存在感 */
+#tbtn-inv, #tbtn-pause {
+  width: 58px; height: 42px; border-radius: 10px;
+  font-size: 14px;
+  background: rgba(16, 18, 26, 0.45);
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+}
+#tbtn-pause {
+  right: calc(14px + env(safe-area-inset-right, 0px));
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  font-size: 16px;
+}
+#tbtn-inv {
+  right: calc(14px + env(safe-area-inset-right, 0px));
+  top: calc(60px + env(safe-area-inset-top, 0px));
+}
+
+/* 横屏矮屏：整体收紧下移，少挡视野 */
+@media (max-height: 480px) {
+  #joy { width: 118px; height: 118px; bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+  #joy-knob { width: 50px; height: 50px; margin: -25px 0 0 -25px; }
+  #tbtn-sprint { bottom: calc(188px + env(safe-area-inset-bottom, 0px)); left: calc(46px + env(safe-area-inset-left, 0px)); }
+  #tbtn-mine  { bottom: calc(118px + env(safe-area-inset-bottom, 0px)); width: 66px; height: 66px; font-size: 24px; }
+  #tbtn-place { bottom: calc(50px + env(safe-area-inset-bottom, 0px)); width: 54px; height: 54px; font-size: 18px; }
+  #tbtn-jump  { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); width: 62px; height: 62px; }
+}
 
 /* ---------- 小屏适配 ---------- */
 @media (max-width: 760px), (max-height: 560px) {
