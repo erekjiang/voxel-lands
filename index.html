@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>体素大陆 · Voxel Lands</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud">
+    <div id="crosshair"></div>
+    <div id="itemname"></div>
+    <div id="hotbar"></div>
+    <div id="debug"></div>
+    <div id="tips">左键 挖掘/攻击 · 右键 放置/进食 · 1-9 / 滚轮 切换 · E 物品清单 · Shift 疾跑 · ESC 暂停</div>
+    <div id="stats">
+      <div id="bubbles" class="statrow"></div>
+      <div class="statline">
+        <div id="hearts" class="statrow"></div>
+        <div id="hungerbar" class="statrow flip"></div>
+      </div>
+    </div>
+    <div id="waterfx"></div>
+    <div id="hurtfx"></div>
+  </div>
+
+  <div id="death" class="hidden">
+    <div class="death-panel">
+      <h1>你死了！</h1>
+      <button id="btn-respawn" class="btn primary">重生</button>
+    </div>
+  </div>
+
+  <!-- 触屏控制（仅触屏设备且游戏运行时显示） -->
+  <div id="touchui">
+    <div id="joy"><div id="joy-knob"></div></div>
+    <div id="tbtn-sprint" class="tbtn small">跑</div>
+    <div id="tbtn-jump" class="tbtn">跳</div>
+    <div id="tbtn-mine" class="tbtn act">挖</div>
+    <div id="tbtn-place" class="tbtn act">放</div>
+    <div id="tbtn-inv" class="tbtn top">背包</div>
+    <div id="tbtn-pause" class="tbtn top">‖</div>
+  </div>
+
+  <div id="inventory" class="hidden">
+    <div class="inv-panel">
+      <div class="inv-cols">
+        <div>
+          <h2>物品清单</h2>
+          <div class="inv-sub">点击物品放入当前选中的快捷栏格</div>
+          <div id="inv-grid"></div>
+        </div>
+        <div>
+          <h2>合成</h2>
+          <div class="inv-sub">原木→木板→木棍→工具 · 石头/铁锭造更强工具</div>
+          <div id="craft-list"></div>
+        </div>
+      </div>
+      <div class="inv-hint">E / ESC 关闭</div>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <div class="panel">
+      <h1>体素大陆</h1>
+      <div class="subtitle">VOXEL LANDS · 程序化生成的体素沙盒</div>
+      <div id="pausehint" class="paused-hint" hidden>— 已暂停 —</div>
+      <button id="btn-start" class="btn primary">开始游戏</button>
+      <button id="btn-mode" class="btn">模式：生存</button>
+      <button id="btn-reset" class="btn danger">重置世界（新种子）</button>
+      <table class="controls">
+        <tr><td>鼠标</td><td>视角 / 挖掘攻击 / 放置进食</td></tr>
+        <tr><td>W A S D</td><td>移动 · 空格 跳跃 · Shift 疾跑</td></tr>
+        <tr><td>1 - 9 / 滚轮</td><td>切换快捷栏</td></tr>
+        <tr><td>E</td><td>物品清单（换装快捷栏）</td></tr>
+        <tr><td>生存</td><td>挖掘拾取掉落物 · 放置消耗库存</td></tr>
+        <tr><td>夜晚</td><td>夜噬怪与硫磺爆虫出没，小心！</td></tr>
+        <tr><td>食物</td><td>猎野猪得肉排 · 打树叶偶得苹果</td></tr>
+        <tr><td>硫磺立方</td><td>右键喂方块 · 左键拍飞</td></tr>
+        <tr><td>ESC</td><td>暂停并释放鼠标</td></tr>
+      </table>
+      <div class="footnote">所有贴图与音效均为程序化原创生成 · 方块修改自动保存到本地</div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
