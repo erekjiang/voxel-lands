@@ -1,0 +1,18 @@
+{
+  "name": "体素大陆 Voxel Lands",
+  "short_name": "体素大陆",
+  "description": "程序化生成的体素沙盒生存游戏：挖掘、建造、合成、生存。",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#8fbce8",
+  "theme_color": "#8fbce8",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -365,6 +365,38 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+// ---------- PWA：离线缓存 + 安装引导 ----------
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+const btnInstall = document.getElementById('btn-install');
+let installPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  installPrompt = e;
+  btnInstall.hidden = false;
+});
+btnInstall.addEventListener('click', async () => {
+  if (!installPrompt) return;
+  installPrompt.prompt();
+  await installPrompt.userChoice.catch(() => {});
+  installPrompt = null;
+  btnInstall.hidden = true;
+});
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  btnInstall.hidden = true;
+});
+// iOS 无 beforeinstallprompt：Safari 且未安装时显示添加指引
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+if (isIOS && !navigator.standalone) {
+  document.getElementById('ios-hint').hidden = false;
+}
+
 // ---------- 存档 ----------
 function saveNow() {
   if (!started && !world.dirtySave) return;

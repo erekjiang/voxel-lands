@@ -399,6 +399,14 @@ body.touch #stats { bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
 
 .footnote { margin-top: 16px; font-size: 11px; color: #778; }
 
+.ios-hint {
+  margin-top: 10px;
+  font-size: 11px; color: #9fc0e8;
+  background: rgba(60, 100, 160, 0.18);
+  border: 1px solid rgba(140, 180, 230, 0.35);
+  padding: 6px 10px;
+}
+
 /* ---------- 方块清单（E 键） ---------- */
 #inventory {
   position: fixed; inset: 0; z-index: 9;

@@ -5,7 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="体素大陆">
+  <meta name="theme-color" content="#8fbce8">
+  <meta name="description" content="程序化生成的体素沙盒生存游戏：挖掘、建造、合成、生存。">
   <title>体素大陆 · Voxel Lands</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon-64.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
@@ -70,8 +77,10 @@
       <div class="subtitle">VOXEL LANDS · 程序化生成的体素沙盒</div>
       <div id="pausehint" class="paused-hint" hidden>— 已暂停 —</div>
       <button id="btn-start" class="btn primary">开始游戏</button>
+      <button id="btn-install" class="btn" hidden>📥 安装到主屏幕</button>
       <button id="btn-mode" class="btn">模式：生存</button>
       <button id="btn-reset" class="btn danger">重置世界（新种子）</button>
+      <div id="ios-hint" class="ios-hint" hidden>iOS：Safari 分享按钮 → “添加到主屏幕”，即可全屏离线游玩</div>
       <table class="controls">
         <tr><td>鼠标</td><td>视角 / 挖掘攻击 / 放置进食</td></tr>
         <tr><td>W A S D</td><td>移动 · 空格 跳跃 · Shift 疾跑</td></tr>
