@@ -962,50 +962,54 @@ export function samplePalette(atlasCanvas, tile, count = 8) {
   return out;
 }
 
-// 用小型离屏 WebGL 渲染器给每种方块画一个等距立方体图标（复用真实图集）
-export function renderBlockIcons(blockIds, PROPS, atlasTexture) {
+// 等距立方体方块图标：纯 2D Canvas 从图集裁面 + 平行四边形变换绘制。
+// 不依赖 WebGL / preserveDrawingBuffer / WebGL-toDataURL，
+// 避免 iOS Safari 与部分安卓 WebView 导出空白图的兼容性问题。
+export function renderBlockIcons(blockIds, PROPS, atlasCanvas) {
   const size = 96;
-  const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, preserveDrawingBuffer: true });
-  renderer.setSize(size, size);
-  renderer.setClearColor(0x000000, 0);
+  const s = 86;                 // 立方体对角尺寸
+  const cx = size / 2, cy = size / 2;
+  const w = s / 2, hh = s / 4, d = s / 2;
+  // 顶点：N 上、E 右、S 中、W 左
+  const N = [cx, cy - s / 2], E = [cx + w, cy - hh], S = [cx, cy], W = [cx - w, cy - hh];
 
-  const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-0.85, 0.85, 0.85, -0.85, 0.1, 10);
-  camera.position.set(1.3, 1.05, 1.3);
-  camera.lookAt(0, -0.05, 0);
+  // tile 在图集中的内容区原点
+  const srcXY = (tile) => [(tile % COLS) * CELL + PAD, ((tile / COLS) | 0) * CELL + PAD];
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.85));
-  const dir = new THREE.DirectionalLight(0xffffff, 1.4);
-  dir.position.set(1.5, 3, 0.8);
-  scene.add(dir);
+  // 单面贴图 + 明暗（先画到临时画布，用 source-atop 保留透明区不被压暗）
+  const tmp = document.createElement('canvas');
+  tmp.width = tmp.height = T;
+  const tctx = tmp.getContext('2d');
 
-  const mat = new THREE.MeshLambertMaterial({ map: atlasTexture, alphaTest: 0.4 });
-  const geo = new THREE.BoxGeometry(1, 1, 1);
-  const mesh = new THREE.Mesh(geo, mat);
-  scene.add(mesh);
-
-  const uvAttr = geo.attributes.uv;
-  const baseUV = uvAttr.array.slice(); // BoxGeometry 默认每面 (0,1)(1,1)(0,0)(1,0)
+  function face(ctx, tile, origin, bx, by, shade) {
+    const [sx, sy] = srcXY(tile);
+    tctx.save();
+    tctx.globalCompositeOperation = 'source-over';
+    tctx.clearRect(0, 0, T, T);
+    tctx.drawImage(atlasCanvas, sx, sy, T, T, 0, 0, T, T);
+    if (shade > 0) {
+      tctx.globalCompositeOperation = 'source-atop';
+      tctx.fillStyle = `rgba(12, 10, 20, ${shade})`;
+      tctx.fillRect(0, 0, T, T);
+    }
+    tctx.restore();
+    ctx.setTransform(bx[0] / T, bx[1] / T, by[0] / T, by[1] / T, origin[0], origin[1]);
+    ctx.drawImage(tmp, 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
 
   const icons = {};
   for (const id of blockIds) {
     const tiles = PROPS[id].tiles;
-    // 面顺序：+x, -x, +y, -y, +z, -z
-    for (let f = 0; f < 6; f++) {
-      const tile = f === 2 ? tiles.top : f === 3 ? tiles.bottom : tiles.side;
-      for (let vtx = 0; vtx < 4; vtx++) {
-        const i = f * 4 + vtx;
-        const [u, v] = tileUV(tile, baseUV[i * 2], baseUV[i * 2 + 1]);
-        uvAttr.setXY(i, u, v);
-      }
-    }
-    uvAttr.needsUpdate = true;
-    renderer.render(scene, camera);
-    icons[id] = renderer.domElement.toDataURL('image/png');
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    // 顶面（原点 N，基向量 N→E / N→W）、左面（W→S / 垂直）、右面（S→E / 垂直）
+    face(ctx, tiles.top, N, [E[0] - N[0], E[1] - N[1]], [W[0] - N[0], W[1] - N[1]], 0);
+    face(ctx, tiles.side, W, [S[0] - W[0], S[1] - W[1]], [0, d], 0.34);
+    face(ctx, tiles.side, S, [E[0] - S[0], E[1] - S[1]], [0, d], 0.16);
+    icons[id] = c.toDataURL('image/png');
   }
-
-  geo.dispose();
-  mat.dispose();
-  renderer.dispose();
   return icons;
 }

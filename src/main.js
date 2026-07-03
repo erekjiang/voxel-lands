@@ -143,7 +143,7 @@ const inv = {
 const toolWear = new Map(Object.entries(save?.toolWear ?? {}).map(([k, v]) => [+k, v]));
 
 // ---------- HUD / 输入 / 交互 / 生物 / 掉落 ----------
-const blockIcons = renderBlockIcons(ALL_ITEMS.filter(isBlockItem), PROPS, tex.atlasTexture);
+const blockIcons = renderBlockIcons(ALL_ITEMS.filter(isBlockItem), PROPS, tex.atlas);
 const itemAssets = createItemAssets();
 const icons = { ...blockIcons, ...itemAssets.icons };
 const hud = new Hud(icons);
