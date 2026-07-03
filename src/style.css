@@ -290,23 +290,27 @@ body.touch #stats { bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
 }
 #tbtn-sprint.on::before { background: #7fe08f; box-shadow: 0 0 6px #7fe08f; }
 
-/* 顶部功能键：圆角方块，弱化存在感 */
+/* 顶部功能键：右上角横排小胶囊，弱化存在感、避开刘海 */
 #tbtn-inv, #tbtn-pause {
-  width: 58px; height: 42px; border-radius: 10px;
-  font-size: 14px;
-  background: rgba(16, 18, 26, 0.45);
-  border: 2px solid rgba(255, 255, 255, 0.28);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  width: 50px; height: 42px; border-radius: 12px;
+  font-size: 12px; letter-spacing: 1px;
+  background: rgba(14, 16, 24, 0.38);
+  border: 1.5px solid rgba(255, 255, 255, 0.30);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.30);
+  opacity: 0.92;
 }
-#tbtn-pause {
-  right: calc(14px + env(safe-area-inset-right, 0px));
-  top: calc(10px + env(safe-area-inset-top, 0px));
-  font-size: 16px;
+#tbtn-pause { right: calc(12px + env(safe-area-inset-right, 0px)); }
+#tbtn-inv   { right: calc(70px + env(safe-area-inset-right, 0px)); }
+/* 暂停图标：CSS 双竖条 */
+#tbtn-pause::before, #tbtn-pause::after {
+  content: '';
+  width: 4px; height: 15px; border-radius: 1.5px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  flex: none;
 }
-#tbtn-inv {
-  right: calc(14px + env(safe-area-inset-right, 0px));
-  top: calc(60px + env(safe-area-inset-top, 0px));
-}
+#tbtn-pause::before { margin-right: 5px; }
 
 /* 横屏矮屏：整体收紧下移，少挡视野 */
 @media (max-height: 480px) {
