@@ -187,11 +187,20 @@ const interact = new Interact(world, player, camera, scene, tex.crackTextures, p
 const mobs = new MobManager(scene, world, player, tex.atlasTexture, createMobSkins(), particles, palettes, sfx, drops);
 interact.setMobs(mobs);
 
-function refreshInvUI() {
+// UI 刷新节流：挖矿/拾取高频触发时合并为 ~150ms 一次，避免 DOM 抖动掉帧
+let invUIDirty = false;
+let invUITimer = 0;
+function refreshInvUI(force) {
+  if (!force) {
+    invUIDirty = true;
+    return;
+  }
+  invUIDirty = false;
+  invUITimer = 0;
   hud.refreshCounts(inv, mode === 'survival', toolWear);
 }
 player.survival = mode === 'survival';
-refreshInvUI();
+refreshInvUI(true);
 
 // 合成
 hud.onCraft = (ri) => {
@@ -203,6 +212,7 @@ hud.onCraft = (ri) => {
   inv.add(recipe.out[0], recipe.out[1]);
   hud.showItemName('合成了 ' + itemName(recipe.out[0]) + (recipe.out[1] > 1 ? ' ×' + recipe.out[1] : ''));
   sfx.place();
+  refreshInvUI(true); // 面板打开中，立即反映数量与配方可用性
 };
 
 input.onHotkey = (i) => { hud.select(i); sfx.click(); };
@@ -293,7 +303,7 @@ function requestLock() {
 
 function openInventory() {
   inventoryOpen = true;
-  refreshInvUI();
+  refreshInvUI(true);
   hud.showInventory(true);
   document.body.classList.add('inv-open');
   if (touchMode) input.clear(); // 世界继续运行，仅冻结输入
@@ -333,7 +343,7 @@ btnMode.addEventListener('click', () => {
   player.survival = mode === 'survival';
   if (mode === 'survival' && player.hp <= 0) player.respawn();
   updateModeButton();
-  refreshInvUI();
+  refreshInvUI(true);
   world.dirtySave = true;
   sfx.click();
 });
@@ -549,6 +559,10 @@ function loop() {
     fpsAcc = 0; fpsFrames = 0;
   }
   adaptQuality(dt);
+
+  // 节流的物品栏 UI 刷新
+  invUITimer += dt;
+  if (invUIDirty && invUITimer >= 0.15) refreshInvUI(true);
   if (debugTimer >= 0.25) {
     debugTimer = 0;
     const p = player.pos;
@@ -602,7 +616,7 @@ window.__game = {
   },
   startPlay, pausePlay,
   get mode() { return mode; },
-  setMode(m) { mode = m; player.survival = m === 'survival'; updateModeButton(); refreshInvUI(); },
+  setMode(m) { mode = m; player.survival = m === 'survival'; updateModeButton(); refreshInvUI(true); },
   get timeOfDay() { return timeOfDay; },
   setTime(v) { timeOfDay = v; },
   get running() { return running; },

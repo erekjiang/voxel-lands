@@ -37,7 +37,8 @@ class MeshBuilder {
     geo.setAttribute('uv', new THREE.BufferAttribute(this.uv.slice(0, this.f * 8), 2));
     geo.setAttribute('color', new THREE.BufferAttribute(this.col.slice(0, this.f * 12), 3));
     geo.setIndex(new THREE.BufferAttribute(this.idx.slice(0, this.f * 6), 1));
-    geo.computeBoundingSphere();
+    // 固定包围球（chunk 尺寸已知），省去全顶点遍历
+    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(8, HEIGHT / 2, 8), CHUNK_SPHERE_R);
     return geo;
   }
 }
@@ -52,6 +53,8 @@ const BUILDERS = {
 export const CHUNK = 16;
 export const HEIGHT = 64;
 export const SEA = 19;
+// chunk 几何的固定包围球半径（局部坐标 0..16 x 0..64 x 0..16）
+const CHUNK_SPHERE_R = Math.sqrt(8 * 8 + (HEIGHT / 2) * (HEIGHT / 2) + 8 * 8) + 1;
 
 // 六个面：dir 法线；corners 顺序配合索引 (0,1,2, 2,1,3)（来自标准体素面表）
 const FACES = [
@@ -88,6 +91,7 @@ export class World {
     this.chunks = new Map();   // "cx,cz" -> { cx, cz, data, meshes, hasMesh }
     this.edits = new Map();    // "cx,cz" -> Map(localIndex -> blockId)
     this.queue = [];
+    this.dirtyMeshes = new Set(); // 延迟重建队列（挖掘邻块 / 爆炸），分帧消化
     this.lastCX = null;
     this.lastCZ = null;
     this.viewDist = 5;         // chunk 半径
@@ -458,14 +462,18 @@ export class World {
     em.set(j, id);
     this.dirtySave = true;
 
-    // 重建受影响的 chunk（边界修改会影响邻 chunk 的面与 AO）
+    // 所在 chunk 立即重建（被挖方块立刻消失）；
+    // 受 AO/邻面影响的边界邻块延迟到后续帧分摊，避免一次挖掘卡多次重建
+    const primary = this.key(cx, cz);
     const affected = new Set();
     for (const ddx of [-1, 0, 1])
       for (const ddz of [-1, 0, 1])
         affected.add(this.key(Math.floor((x + ddx) / 16), Math.floor((z + ddz) / 16)));
     for (const ak of affected) {
       const ac = this.chunks.get(ak);
-      if (ac && ac.hasMesh) this.buildMesh(ac.cx, ac.cz);
+      if (!ac || !ac.hasMesh) continue;
+      if (ak === primary) this.buildMesh(ac.cx, ac.cz);
+      else this.dirtyMeshes.add(ak);
     }
     return true;
   }
@@ -490,9 +498,10 @@ export class World {
     }
     if (affected.size === 0) return;
     this.dirtySave = true;
+    // 爆炸等批量修改：全部延迟分帧重建，避免一帧内重建多个 chunk
     for (const ak of affected) {
       const ac = this.chunks.get(ak);
-      if (ac && ac.hasMesh) this.buildMesh(ac.cx, ac.cz);
+      if (ac && ac.hasMesh) this.dirtyMeshes.add(ak);
     }
   }
 
@@ -624,6 +633,18 @@ export class World {
   // meshBudget：每帧最多构建的网格数；dataBudget：每帧最多生成的 chunk 数据数。
   // 网格构建前先分帧补齐 3x3 邻域数据，避免一帧内同时生成多块地形造成卡顿尖峰。
   update(px, pz, meshBudget = 1, dataBudget = 3) {
+    // 优先消化挖掘/爆炸产生的延迟重建（每帧最多 2 个）
+    let dirtyBudget = 2;
+    for (const k of this.dirtyMeshes) {
+      if (dirtyBudget <= 0) break;
+      this.dirtyMeshes.delete(k);
+      const c = this.chunks.get(k);
+      if (c && c.hasMesh) {
+        this.buildMesh(c.cx, c.cz);
+        dirtyBudget--;
+      }
+    }
+
     const ccx = Math.floor(px / 16), ccz = Math.floor(pz / 16);
     if (ccx !== this.lastCX || ccz !== this.lastCZ) {
       this.lastCX = ccx;
