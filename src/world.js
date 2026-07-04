@@ -46,6 +46,7 @@ const BUILDERS = {
   opaque: new MeshBuilder(4096),
   cutout: new MeshBuilder(512),
   water: new MeshBuilder(1024),
+  glow: new MeshBuilder(256),   // 自发光方块（荧光石）：无光照材质
 };
 
 export const CHUNK = 16;
@@ -208,9 +209,17 @@ export class World {
               lastPair = pair;
               pairOre = this.orePick(gx >> 1, pair, gz >> 1, y);
             }
-            id = pairOre || BLOCK.STONE;
+            // 深层基底为暗岩
+            id = pairOre || (y < 12 ? BLOCK.DARKSTONE : BLOCK.STONE);
           }
-          else if (y < h) id = sandy ? BLOCK.SAND : BLOCK.DIRT;
+          else if (y < h) {
+            if (sandy) {
+              // 沙滩/水底沙层下的黏土矿囊
+              id = (y >= h - 2 &&
+                this.noise.hash3((gx >> 1) + 23, (y >> 1) + 61, (gz >> 1) - 17) < 0.10)
+                ? BLOCK.CLAY : BLOCK.SAND;
+            } else id = BLOCK.DIRT;
+          }
           else id = sandy ? BLOCK.SAND : snowy ? BLOCK.SNOW : BLOCK.GRASS;
           data[col + y * 256] = id;
         }
@@ -220,13 +229,32 @@ export class World {
 
     this.carveCaves(data, cx, cz, hs);
 
-    // 树（考虑跨 chunk 树冠：候选点扩到 -2..17）
+    // 树（考虑跨 chunk 树冠：候选点扩到 -2..17）；约 1/3 为桦树
     for (let tx = -2; tx < 18; tx++) {
       for (let tz = -2; tz < 18; tz++) {
         const gx = cx * 16 + tx, gz = cz * 16 + tz;
         const h = hs[(tx + 2) * 20 + (tz + 2)];
         const th = this.treeHeight(gx, gz, h);
-        if (th) this.stampTree(data, cx, cz, gx, gz, h, th);
+        if (th) {
+          const trunk = this.noise.hash(gx * 13 + 41, gz * 7 - 29) < 0.33
+            ? BLOCK.BIRCH_LOG : BLOCK.LOG;
+          this.stampTree(data, cx, cz, gx, gz, h, th, trunk);
+        }
+      }
+    }
+
+    // 南瓜：草地上稀有生成（仅本 chunk 内，且不与树干冲突）
+    for (let px = 0; px < 16; px++) {
+      for (let pz = 0; pz < 16; pz++) {
+        const gx = cx * 16 + px, gz = cz * 16 + pz;
+        if (this.noise.hash(gx * 29 + 311, gz * 29 - 173) >= 0.002) continue;
+        const h = hs[(px + 2) * 20 + (pz + 2)];
+        if (h <= SEA + 1 || h + 1 >= HEIGHT) continue;
+        const ground = data[px + pz * 16 + h * 256];
+        const above = data[px + pz * 16 + (h + 1) * 256];
+        if (ground === BLOCK.GRASS && above === BLOCK.AIR) {
+          data[px + pz * 16 + (h + 1) * 256] = BLOCK.PUMPKIN;
+        }
       }
     }
 
@@ -313,6 +341,9 @@ export class World {
           if (!nearCave) continue;
           if (isCarved(lx, y + 1, lz)) {
             data[j] = BLOCK.SULFUR; // 洞底
+          } else if (isCarved(lx, y - 1, lz) &&
+              this.noise.hash(gx * 19 - 7, gz * 19 + y * 3) < 0.06) {
+            data[j] = BLOCK.GLOWSTONE; // 洞顶偶发荧光石
           } else {
             const band = y % 6 < 2;
             const jitter = this.noise.hash(gx * 11 + y * 3, gz * 11 - y * 5) < 0.18;
@@ -355,7 +386,7 @@ export class World {
     }
   }
 
-  stampTree(data, cx, cz, gx, gz, h, th) {
+  stampTree(data, cx, cz, gx, gz, h, th, trunkId = BLOCK.LOG) {
     const setLocal = (wx, wy, wz, id, keepExisting) => {
       const lx = wx - cx * 16, lz = wz - cz * 16;
       if (lx < 0 || lx > 15 || lz < 0 || lz > 15 || wy < 1 || wy >= HEIGHT) return;
@@ -378,7 +409,7 @@ export class World {
         }
       }
     }
-    for (let y = h + 1; y <= topY; y++) setLocal(gx, y, gz, BLOCK.LOG, false);
+    for (let y = h + 1; y <= topY; y++) setLocal(gx, y, gz, trunkId, false);
   }
 
   // 矿脉与矿囊：2x2x2 团簇哈希，稀有度递增、越深越多。
@@ -489,6 +520,7 @@ export class World {
     BUILDERS.opaque.reset();
     BUILDERS.cutout.reset();
     BUILDERS.water.reset();
+    BUILDERS.glow.reset();
 
     const data = c.data;
     const aos = [1, 1, 1, 1];
@@ -562,8 +594,9 @@ export class World {
       opaque: this.materials.opaque,
       cutout: this.materials.cutout,
       water: this.materials.water,
+      glow: this.materials.glow,
     };
-    for (const name of ['opaque', 'cutout', 'water']) {
+    for (const name of ['opaque', 'cutout', 'water', 'glow']) {
       const geo = BUILDERS[name].toGeometry();
       if (!geo) continue;
       const mesh = new THREE.Mesh(geo, matMap[name]);

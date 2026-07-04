@@ -1,7 +1,7 @@
 // localStorage 存档：种子、玩家状态、方块修改记录。
 
-// v3：地形加入多矿脉/雪顶后与旧档不兼容，换 key 避免旧数据错位
-const KEY = 'voxel-lands-save-v3';
+// v4：地形加入暗岩/黏土/桦树/南瓜/荧光石后与旧档不兼容
+const KEY = 'voxel-lands-save-v4';
 
 export function loadSave() {
   try {

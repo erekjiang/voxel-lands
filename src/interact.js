@@ -193,7 +193,8 @@ export class Interact {
           }
         } else if (canHarvest(props, tool)) {
           const drop = dropOf(id);
-          if (drop != null) this.api.drops.spawn(drop, hit.x + 0.5, hit.y + 0.4, hit.z + 0.5, 1);
+          const n = id === BLOCK.CLAY ? 4 : 1; // 黏土掉 4 个黏土球
+          if (drop != null) this.api.drops.spawn(drop, hit.x + 0.5, hit.y + 0.4, hit.z + 0.5, n);
         }
         if (tool) this.api.onToolUse(itemId);
       }

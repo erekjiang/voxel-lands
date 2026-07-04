@@ -646,6 +646,142 @@ function paintBookshelfSide(img, rand) {
   }
 }
 
+function paintBirchLogSide(img, rand) {
+  // 苍白桦皮 + 横向黑色皮孔短划
+  fillRamp(img, rand, ['#c8c4b6', '#d8d4c6', '#e4e0d2', '#d0ccbe'], { period: 8, octaves: 3 });
+  for (let i = 0; i < 14; i++) {
+    const x = (rand() * T) | 0, y = (rand() * T) | 0;
+    const len = 3 + ((rand() * 6) | 0);
+    for (let j = 0; j < len; j++) {
+      img.set(x + j, y, 44, 40, 34);
+      if (rand() < 0.5) img.set(x + j, y + 1, 66, 60, 50);
+    }
+  }
+  grain(img, rand, 6);
+}
+
+function paintBirchLogTop(img, rand) {
+  const warp = fbmTile(rand, 8, 2);
+  const barkStops = ['#b8b4a6', '#c8c4b6', '#d4d0c2'].map(hex);
+  const woodStops = ['#cfc4a4', '#dcd2b4', '#e8dfc4', '#f0e8d2'].map(hex);
+  for (let y = 0; y < T; y++)
+    for (let x = 0; x < T; x++) {
+      const dx = x - 31.5, dy = y - 31.5;
+      const r = Math.sqrt(dx * dx + dy * dy) + warp(x / T, y / T) * 4;
+      if (r > 28) {
+        const c = ramp(barkStops, warp(y / T, x / T));
+        img.set(x, y, c[0], c[1], c[2]);
+      } else {
+        const band = (Math.sin(r * 0.9) + 1) / 2;
+        const c = ramp(woodStops, band);
+        img.set(x, y, c[0], c[1], c[2]);
+        if (Math.sin(r * 0.9) > 0.92) img.add(x, y, -20);
+      }
+    }
+  grain(img, rand, 5);
+}
+
+function paintBirchPlanks(img, rand) {
+  const warp = fbmTile(rand, 8, 2);
+  const stops = ['#b8a878', '#cbbc8c', '#d8caa0', '#e2d6ae'].map(hex);
+  for (let y = 0; y < T; y++) {
+    const board = (y / 16) | 0;
+    for (let x = 0; x < T; x++) {
+      const g = Math.sin(x * 0.32 + warp(x / T, y / T) * 5 + board * 2.3) * 0.5 + 0.5;
+      const c = ramp(stops, g * 0.7 + 0.15);
+      img.set(x, y, c[0], c[1], c[2]);
+    }
+  }
+  for (let b = 0; b < 4; b++) {
+    const yS = b * 16 + 14;
+    for (let x = 0; x < T; x++) {
+      img.set(x, yS, 122, 108, 74);
+      img.set(x, yS + 1, 104, 92, 62);
+      img.add(x, yS + 2, 12);
+    }
+    const joint = ((b * 23 + 11) % T) | 0;
+    for (let y = b * 16; y < b * 16 + 14; y++) {
+      img.set(joint, y, 116, 102, 70);
+      img.add(joint + 1, y, 10);
+    }
+  }
+  grain(img, rand, 6);
+}
+
+function paintGlowstone(img, rand) {
+  // 暖黄发光晶簇：亮团块 + 橙色缝隙
+  fillRamp(img, rand, ['#c98f2e', '#e8b83e', '#f6d465', '#ffe98e'], { period: 4, octaves: 3, contrast: 1.4 });
+  for (let i = 0; i < 16; i++) {
+    const x = (rand() * T) | 0, y = (rand() * T) | 0;
+    img.set(x, y, 255, 250, 200);
+    img.set(x + 1, y, 255, 244, 170);
+  }
+  for (let i = 0; i < 8; i++) img.tint((rand() * T) | 0, (rand() * T) | 0, -40, -50, -30);
+  grain(img, rand, 6);
+}
+
+function paintDarkstone(img, rand) {
+  fillRamp(img, rand, ['#26262e', '#32323c', '#3e3e4a', '#2c2c36'], { period: 8, octaves: 3 });
+  for (let i = 0; i < 5; i++) vein(img, rand, '#16161c', '#4a4a58', 10 + rand() * 14, 1);
+  grain(img, rand, 6);
+}
+
+function paintDarkstoneBricks(img, rand) {
+  paintBricks(img, rand, ['#32323c', '#3a3a46', '#42424e', '#36363f'], ['#1c1c22', '#22222a', '#26262e']);
+}
+
+function paintClay(img, rand) {
+  fillRamp(img, rand, ['#8a90a0', '#9aa0b0', '#a8aebc', '#9298a8'], { period: 8, octaves: 2 });
+  for (let i = 0; i < 12; i++) img.add((rand() * T) | 0, (rand() * T) | 0, -14);
+  grain(img, rand, 4);
+}
+
+function paintPumpkinSide(img, rand) {
+  // 橙皮 + 竖向棱脊明暗
+  const stops = ['#b45f18', '#cc7420', '#e08828', '#d67c22'].map(hex);
+  const n = fbmTile(rand, 8, 2);
+  for (let y = 0; y < T; y++)
+    for (let x = 0; x < T; x++) {
+      const rib = Math.sin(x * 0.42) * 0.5 + 0.5; // 棱脊
+      const c = ramp(stops, rib * 0.6 + n(x / T, y / T) * 0.4);
+      img.set(x, y, c[0], c[1], c[2]);
+      if (Math.cos(x * 0.42) > 0.94) img.add(x, y, -26); // 棱沟
+    }
+  grain(img, rand, 6);
+}
+
+function paintPumpkinTop(img, rand) {
+  paintPumpkinSide(img, rand);
+  // 放射状瓜纹 + 中心瓜蒂
+  for (let a = 0; a < 8; a++) {
+    const ang = (a / 8) * Math.PI * 2;
+    for (let r = 8; r < 30; r++) {
+      img.add(32 + Math.cos(ang) * r, 32 + Math.sin(ang) * r, -18);
+    }
+  }
+  for (let dy = -4; dy <= 4; dy++)
+    for (let dx = -4; dx <= 4; dx++) {
+      if (Math.abs(dx) + Math.abs(dy) > 6) continue;
+      img.set(32 + dx, 32 + dy, 88, 108, 48);
+      if (dx + dy < 0) img.add(32 + dx, 32 + dy, 16);
+    }
+}
+
+// 染色绒毛：复用卷毛逻辑
+function paintWoolColored(stops) {
+  return (img, rand) => {
+    fillRamp(img, rand, stops, { period: 8, octaves: 3 });
+    const curl = tileNoise(rand, 16);
+    for (let y = 0; y < T; y++)
+      for (let x = 0; x < T; x++) {
+        const c = curl(x / T, y / T);
+        if (c > 0.68) img.add(x, y, 12);
+        else if (c < 0.34) img.add(x, y, -16);
+      }
+    grain(img, rand, 6);
+  };
+}
+
 const PAINTERS = {
   [TILE.GRASS_TOP]: paintGrassTop,
   [TILE.GRASS_SIDE]: paintGrassSide,
@@ -679,6 +815,20 @@ const PAINTERS = {
   [TILE.GOLD_BLOCK]: paintGoldBlock,
   [TILE.GEM_BLOCK]: paintGemBlock,
   [TILE.BOOKSHELF_SIDE]: paintBookshelfSide,
+  [TILE.BIRCH_LOG_SIDE]: paintBirchLogSide,
+  [TILE.BIRCH_LOG_TOP]: paintBirchLogTop,
+  [TILE.BIRCH_PLANKS]: paintBirchPlanks,
+  [TILE.GLOWSTONE]: paintGlowstone,
+  [TILE.DARKSTONE]: paintDarkstone,
+  [TILE.DARKSTONE_BRICKS]: paintDarkstoneBricks,
+  [TILE.CLAY]: paintClay,
+  [TILE.PUMPKIN_SIDE]: paintPumpkinSide,
+  [TILE.PUMPKIN_TOP]: paintPumpkinTop,
+  [TILE.WOOL_RED]: paintWoolColored(['#7e2620', '#9c342a', '#b44236', '#a03a2e']),
+  [TILE.WOOL_YELLOW]: paintWoolColored(['#b89a26', '#d4b432', '#e8ca48', '#dcbe3a']),
+  [TILE.WOOL_GREEN]: paintWoolColored(['#3a6e28', '#4a8632', '#5a9c3e', '#4e8a34']),
+  [TILE.WOOL_BLUE]: paintWoolColored(['#26407e', '#32529c', '#3e64b4', '#3858a4']),
+  [TILE.WOOL_BLACK]: paintWoolColored(['#16161a', '#222228', '#2e2e36', '#26262c']),
 };
 
 // ---------- 纹理装配 ----------
@@ -1146,6 +1296,37 @@ function paintGem(img) {
   img.set(26, 18, 255, 255, 255); img.set(27, 18, 255, 255, 255); img.set(26, 19, 255, 255, 255);
 }
 
+function paintClayBall(img) {
+  // 灰蓝圆球 + 左上高光
+  for (let y = 0; y < T; y++)
+    for (let x = 0; x < T; x++) {
+      const dx = (x - 32) / 17, dy = (y - 34) / 17;
+      const d = dx * dx + dy * dy;
+      if (d > 1) continue;
+      let c = d > 0.7 ? [122, 128, 142] : [154, 160, 176];
+      if (dx < -0.2 && dy < -0.2 && d < 0.5) c = [190, 196, 208];
+      img.set(x, y, c[0], c[1], c[2]);
+    }
+}
+
+function paintGoldApple(img) {
+  paintApple(img);
+  // 覆盖为金色果身（保留形状与叶柄）
+  for (let y = 0; y < T; y++)
+    for (let x = 0; x < T; x++) {
+      const o = ((y | 0) * T + (x | 0)) * 4;
+      const d = img.data;
+      if (d[o + 3] === 0) continue;
+      // 只染红色果身，不动绿叶与褐柄
+      if (d[o] > 120 && d[o + 1] < 130 && d[o + 2] < 120) {
+        const bright = d[o] > 200 ? 60 : 0;
+        d[o] = 232 + (bright ? 18 : 0);
+        d[o + 1] = 186 + bright;
+        d[o + 2] = 60 + (bright ? 60 : 0);
+      }
+    }
+}
+
 export function createItemAssets() {
   const defs = {
     100: paintMeat, 101: paintApple, 102: paintRotten,
@@ -1154,6 +1335,8 @@ export function createItemAssets() {
     105: paintCoal,
     106: paintIngot([250, 224, 120], [232, 190, 70], [178, 138, 36]),
     107: paintGem,
+    108: paintClayBall,
+    109: paintGoldApple,
     110: paintTool('pickaxe', 'wood'), 111: paintTool('axe', 'wood'), 112: paintTool('shovel', 'wood'), 113: paintTool('sword', 'wood'),
     114: paintTool('pickaxe', 'stone'), 115: paintTool('axe', 'stone'), 116: paintTool('shovel', 'stone'), 117: paintTool('sword', 'stone'),
     118: paintTool('pickaxe', 'iron'), 119: paintTool('axe', 'iron'), 120: paintTool('shovel', 'iron'), 121: paintTool('sword', 'iron'),

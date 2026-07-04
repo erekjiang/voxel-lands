@@ -69,6 +69,8 @@ const materials = {
     depthWrite: false,
     side: THREE.DoubleSide,
   }),
+  // 自发光方块：不受光照，夜里也保持全亮（荧光石）
+  glow: new THREE.MeshBasicMaterial({ map: tex.atlasTexture }),
 };
 
 // 方形太阳 / 月亮 + 像素云层

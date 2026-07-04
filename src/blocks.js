@@ -33,6 +33,18 @@ export const BLOCK = {
   GOLD_BLOCK: 29,
   GEM_BLOCK: 30,
   BOOKSHELF: 31,
+  BIRCH_LOG: 32,
+  BIRCH_PLANKS: 33,
+  GLOWSTONE: 34,
+  DARKSTONE: 35,
+  DARKSTONE_BRICKS: 36,
+  CLAY: 37,
+  PUMPKIN: 38,
+  WOOL_RED: 39,
+  WOOL_YELLOW: 40,
+  WOOL_GREEN: 41,
+  WOOL_BLUE: 42,
+  WOOL_BLACK: 43,
 };
 
 // 贴图图集中的 tile 序号（8 列 x 8 行图集）
@@ -69,6 +81,20 @@ export const TILE = {
   GOLD_BLOCK: 29,
   GEM_BLOCK: 30,
   BOOKSHELF_SIDE: 31,
+  BIRCH_LOG_SIDE: 32,
+  BIRCH_LOG_TOP: 33,
+  BIRCH_PLANKS: 34,
+  GLOWSTONE: 35,
+  DARKSTONE: 36,
+  DARKSTONE_BRICKS: 37,
+  CLAY: 38,
+  PUMPKIN_SIDE: 39,
+  PUMPKIN_TOP: 40,
+  WOOL_RED: 41,
+  WOOL_YELLOW: 42,
+  WOOL_GREEN: 43,
+  WOOL_BLUE: 44,
+  WOOL_BLACK: 45,
 };
 
 function same(t) {
@@ -118,11 +144,23 @@ def(BLOCK.STONE_BRICKS,    { name: '石砖', hardness: 2.0,  toolClass: 'pickaxe
 def(BLOCK.GOLD_BLOCK,      { name: '金块', hardness: 3.0,  toolClass: 'pickaxe', needsTier: 2, tiles: same(TILE.GOLD_BLOCK) });
 def(BLOCK.GEM_BLOCK,       { name: '蓝晶块', hardness: 4.0,  toolClass: 'pickaxe', needsTier: 2, tiles: same(TILE.GEM_BLOCK) });
 def(BLOCK.BOOKSHELF,       { name: '书柜', hardness: 1.5,  toolClass: 'axe', tiles: { top: TILE.PLANKS, side: TILE.BOOKSHELF_SIDE, bottom: TILE.PLANKS } });
+def(BLOCK.BIRCH_LOG,       { name: '桦木原木', hardness: 1.4, toolClass: 'axe', tiles: { top: TILE.BIRCH_LOG_TOP, side: TILE.BIRCH_LOG_SIDE, bottom: TILE.BIRCH_LOG_TOP } });
+def(BLOCK.BIRCH_PLANKS,    { name: '桦木板', hardness: 1.3, toolClass: 'axe', tiles: same(TILE.BIRCH_PLANKS) });
+def(BLOCK.GLOWSTONE,       { name: '荧光石', hardness: 0.4, bucket: 'glow', tiles: same(TILE.GLOWSTONE) });
+def(BLOCK.DARKSTONE,       { name: '暗岩', hardness: 2.4,  toolClass: 'pickaxe', needsTier: 1, tiles: same(TILE.DARKSTONE) });
+def(BLOCK.DARKSTONE_BRICKS,{ name: '暗岩砖', hardness: 2.4, toolClass: 'pickaxe', needsTier: 1, tiles: same(TILE.DARKSTONE_BRICKS) });
+def(BLOCK.CLAY,            { name: '黏土', hardness: 0.5,  toolClass: 'shovel', tiles: same(TILE.CLAY) });
+def(BLOCK.PUMPKIN,         { name: '南瓜', hardness: 1.0,  toolClass: 'axe', tiles: { top: TILE.PUMPKIN_TOP, side: TILE.PUMPKIN_SIDE, bottom: TILE.PUMPKIN_TOP } });
+def(BLOCK.WOOL_RED,        { name: '红绒毛', hardness: 0.6, tiles: same(TILE.WOOL_RED) });
+def(BLOCK.WOOL_YELLOW,     { name: '黄绒毛', hardness: 0.6, tiles: same(TILE.WOOL_YELLOW) });
+def(BLOCK.WOOL_GREEN,      { name: '绿绒毛', hardness: 0.6, tiles: same(TILE.WOOL_GREEN) });
+def(BLOCK.WOOL_BLUE,       { name: '蓝绒毛', hardness: 0.6, tiles: same(TILE.WOOL_BLUE) });
+def(BLOCK.WOOL_BLACK,      { name: '黑绒毛', hardness: 0.6, tiles: same(TILE.WOOL_BLACK) });
 
 // ---------- 物品（非方块，id 从 100 起）----------
 export const ITEM = {
   MEAT: 100, APPLE: 101, ROTTEN: 102, STICK: 103, IRON: 104,
-  COAL: 105, GOLD: 106, GEM: 107,
+  COAL: 105, GOLD: 106, GEM: 107, CLAY_BALL: 108, GOLD_APPLE: 109,
   WOOD_PICK: 110, WOOD_AXE: 111, WOOD_SHOVEL: 112, WOOD_SWORD: 113,
   STONE_PICK: 114, STONE_AXE: 115, STONE_SHOVEL: 116, STONE_SWORD: 117,
   IRON_PICK: 118, IRON_AXE: 119, IRON_SHOVEL: 120, IRON_SWORD: 121,
@@ -134,6 +172,7 @@ export const FOODS = {
   [ITEM.MEAT]:   { name: '肉排', restore: 5 },
   [ITEM.APPLE]:  { name: '苹果', restore: 4 },
   [ITEM.ROTTEN]: { name: '腐肉', restore: 2 },
+  [ITEM.GOLD_APPLE]: { name: '金苹果', restore: 10 },
 };
 
 export const MISC_ITEMS = {
@@ -142,6 +181,7 @@ export const MISC_ITEMS = {
   [ITEM.COAL]:  { name: '煤' },
   [ITEM.GOLD]:  { name: '金锭' },
   [ITEM.GEM]:   { name: '蓝晶' },
+  [ITEM.CLAY_BALL]: { name: '黏土球' },
 };
 
 // 工具：class 决定加速的方块类；tier 采集等级(1木 2石 3铁 4蓝晶)；
@@ -190,6 +230,7 @@ export function dropOf(id) {
   if (id === BLOCK.COAL_ORE) return ITEM.COAL;
   if (id === BLOCK.GOLD_ORE) return ITEM.GOLD;
   if (id === BLOCK.GEM_ORE) return ITEM.GEM;
+  if (id === BLOCK.CLAY) return ITEM.CLAY_BALL; // 数量在 interact 里为 4
   if (id === BLOCK.LEAVES) return null; // 苹果概率另行处理
   if (id === BLOCK.WATER || id === BLOCK.BEDROCK || id === BLOCK.AIR) return null;
   return id;
@@ -222,6 +263,18 @@ export const RECIPES = [
   { out: [BLOCK.BOOKSHELF, 1],    in: [[BLOCK.PLANKS, 6]] },
   { out: [BLOCK.GOLD_BLOCK, 1],   in: [[ITEM.GOLD, 9]] },
   { out: [BLOCK.GEM_BLOCK, 1],    in: [[ITEM.GEM, 9]] },
+  { out: [BLOCK.BIRCH_PLANKS, 4], in: [[BLOCK.BIRCH_LOG, 1]] },
+  { out: [ITEM.STICK, 4],         in: [[BLOCK.BIRCH_PLANKS, 2]] },
+  { out: [BLOCK.BRICK, 1],        in: [[ITEM.CLAY_BALL, 4]] },
+  { out: [BLOCK.DARKSTONE_BRICKS, 4], in: [[BLOCK.DARKSTONE, 4]] },
+  { out: [BLOCK.GLOWSTONE, 1],    in: [[BLOCK.SULFUR, 4]] },
+  { out: [ITEM.GOLD_APPLE, 1],    in: [[ITEM.APPLE, 1], [ITEM.GOLD, 2]] },
+  // 绒毛染色（使用本作矿物/植物材料）
+  { out: [BLOCK.WOOL_RED, 1],    in: [[BLOCK.WOOL, 1], [BLOCK.CINNABAR, 1]] },
+  { out: [BLOCK.WOOL_YELLOW, 1], in: [[BLOCK.WOOL, 1], [BLOCK.SULFUR, 1]] },
+  { out: [BLOCK.WOOL_GREEN, 1],  in: [[BLOCK.WOOL, 1], [BLOCK.LEAVES, 1]] },
+  { out: [BLOCK.WOOL_BLUE, 1],   in: [[BLOCK.WOOL, 1], [ITEM.GEM, 1]] },
+  { out: [BLOCK.WOOL_BLACK, 1],  in: [[BLOCK.WOOL, 1], [ITEM.COAL, 1]] },
 ];
 
 // 快捷栏默认 9 格
@@ -233,9 +286,11 @@ export const HOTBAR_BLOCKS = [
 // 方块清单（E 键）里可选的全部方块
 export const PLACEABLE_BLOCKS = [
   BLOCK.GRASS, BLOCK.DIRT, BLOCK.STONE, BLOCK.COBBLE, BLOCK.MOSSY_COBBLE,
-  BLOCK.STONE_BRICKS, BLOCK.LOG, BLOCK.LEAVES, BLOCK.PLANKS, BLOCK.BOOKSHELF,
-  BLOCK.SAND, BLOCK.SANDSTONE, BLOCK.GRAVEL, BLOCK.SNOW, BLOCK.ICE,
-  BLOCK.GLASS, BLOCK.BRICK, BLOCK.WOOL,
+  BLOCK.STONE_BRICKS, BLOCK.DARKSTONE, BLOCK.DARKSTONE_BRICKS,
+  BLOCK.LOG, BLOCK.BIRCH_LOG, BLOCK.LEAVES, BLOCK.PLANKS, BLOCK.BIRCH_PLANKS, BLOCK.BOOKSHELF,
+  BLOCK.SAND, BLOCK.SANDSTONE, BLOCK.GRAVEL, BLOCK.CLAY, BLOCK.SNOW, BLOCK.ICE,
+  BLOCK.GLASS, BLOCK.BRICK, BLOCK.PUMPKIN, BLOCK.GLOWSTONE,
+  BLOCK.WOOL, BLOCK.WOOL_RED, BLOCK.WOOL_YELLOW, BLOCK.WOOL_GREEN, BLOCK.WOOL_BLUE, BLOCK.WOOL_BLACK,
   BLOCK.COAL_ORE, BLOCK.IRON_ORE, BLOCK.GOLD_ORE, BLOCK.GEM_ORE,
   BLOCK.GOLD_BLOCK, BLOCK.GEM_BLOCK, BLOCK.OBSIDIAN,
   BLOCK.SULFUR, BLOCK.SULFUR_BRICKS, BLOCK.CINNABAR, BLOCK.CINNABAR_BRICKS,
@@ -244,8 +299,8 @@ export const PLACEABLE_BLOCKS = [
 // 物品清单 = 方块 + 材料 + 食物 + 工具
 export const ALL_ITEMS = [
   ...PLACEABLE_BLOCKS,
-  ITEM.STICK, ITEM.COAL, ITEM.IRON, ITEM.GOLD, ITEM.GEM,
-  ITEM.MEAT, ITEM.APPLE, ITEM.ROTTEN,
+  ITEM.STICK, ITEM.COAL, ITEM.IRON, ITEM.GOLD, ITEM.GEM, ITEM.CLAY_BALL,
+  ITEM.MEAT, ITEM.APPLE, ITEM.GOLD_APPLE, ITEM.ROTTEN,
   ITEM.WOOD_PICK, ITEM.WOOD_AXE, ITEM.WOOD_SHOVEL, ITEM.WOOD_SWORD,
   ITEM.STONE_PICK, ITEM.STONE_AXE, ITEM.STONE_SHOVEL, ITEM.STONE_SWORD,
   ITEM.IRON_PICK, ITEM.IRON_AXE, ITEM.IRON_SHOVEL, ITEM.IRON_SWORD,
