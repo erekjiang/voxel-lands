@@ -9,9 +9,9 @@ import { rng } from './noise.js';
 const T = 64;            // tile 内容尺寸
 const CELL = 128;        // 图集单元（含 gutter）
 const PAD = 32;
-const COLS = 4;
-const ROWS = 8;          // 4x8 = 32 格容量
-const ATLAS_W = CELL * COLS;  // 512
+const COLS = 8;
+const ROWS = 8;          // 8x8 = 64 格容量
+const ATLAS_W = CELL * COLS;  // 1024
 const ATLAS_H = CELL * ROWS;  // 1024
 
 // ---------- 基础工具 ----------
@@ -469,6 +469,183 @@ function paintWool(img, rand) {
   grain(img, rand, 6);
 }
 
+// 通用矿石：石底 + 矿粒簇（亮面/暗面双色）
+function orePatches(img, rand, count, light, dark, spark) {
+  for (let i = 0; i < count; i++) {
+    const cx = 6 + ((rand() * 52) | 0), cy = 6 + ((rand() * 52) | 0);
+    const rr = 2 + ((rand() * 3) | 0);
+    for (let dy = -rr; dy <= rr; dy++)
+      for (let dx = -rr; dx <= rr; dx++) {
+        if (dx * dx + dy * dy > rr * rr) continue;
+        const c = dx + dy < 0 ? light : dark;
+        img.set(cx + dx, cy + dy, c[0], c[1], c[2]);
+      }
+    img.add(cx + rr, cy + rr + 1, -30);
+    if (spark) img.set(cx - 1, cy - 1, spark[0], spark[1], spark[2]);
+  }
+}
+
+function paintCobble(img, rand) {
+  // 暗缝底 + 一颗颗鹅卵石块（左上受光/右下阴影）
+  fillRamp(img, rand, ['#3f3f3f', '#4a4a4a', '#555555'], { period: 8, octaves: 2 });
+  for (let i = 0; i < 16; i++) {
+    const cx = rand() * T, cy = rand() * T;
+    const rw = 4 + rand() * 5, rh = 3 + rand() * 4;
+    const base = 105 + rand() * 45;
+    for (let dy = -rh; dy <= rh; dy++)
+      for (let dx = -rw; dx <= rw; dx++) {
+        if ((dx * dx) / (rw * rw) + (dy * dy) / (rh * rh) > 1) continue;
+        const light = base + (dx + dy < 0 ? 18 : -14) + (rand() - 0.5) * 10;
+        img.set(cx + dx, cy + dy, light, light, light);
+      }
+  }
+  grain(img, rand, 7);
+}
+
+function paintMossyCobble(img, rand) {
+  paintCobble(img, rand);
+  const moss = tileNoise(rand, 4);
+  for (let y = 0; y < T; y++)
+    for (let x = 0; x < T; x++) {
+      const m = moss(x / T, y / T);
+      if (m > 0.60) img.tint(x, y, -34, 12, -34);
+      else if (m > 0.52) img.tint(x, y, -16, 4, -16);
+    }
+}
+
+function paintGravel(img, rand) {
+  fillRamp(img, rand, ['#5f5a52', '#6e6960', '#7d786e'], { period: 8, octaves: 2 });
+  const cols = [[142, 136, 126], [104, 98, 90], [124, 112, 96], [88, 84, 80], [150, 146, 140]];
+  for (let i = 0; i < 90; i++) {
+    const cx = (rand() * T) | 0, cy = (rand() * T) | 0;
+    const rr = 1 + ((rand() * 2) | 0);
+    const c = cols[(rand() * cols.length) | 0];
+    for (let dy = -rr; dy <= rr; dy++)
+      for (let dx = -rr; dx <= rr; dx++) {
+        if (dx * dx + dy * dy > rr * rr) continue;
+        img.set(cx + dx, cy + dy, c[0] + (dx + dy < 0 ? 12 : -10), c[1], c[2]);
+      }
+  }
+  grain(img, rand, 8);
+}
+
+function paintSnow(img, rand) {
+  fillRamp(img, rand, ['#dbe4ec', '#e9f0f5', '#f6fafc', '#ffffff'], { period: 8, octaves: 2 });
+  for (let i = 0; i < 14; i++) img.set((rand() * T) | 0, (rand() * T) | 0, 255, 255, 255);
+  for (let i = 0; i < 10; i++) img.tint((rand() * T) | 0, (rand() * T) | 0, -14, -8, 0);
+  grain(img, rand, 4);
+}
+
+function paintIce(img, rand) {
+  fillRamp(img, rand, ['#9cc8e8', '#b0d6f0', '#c4e4f6', '#d6eefa'], { period: 8, octaves: 2 });
+  // 斜向冰裂细纹 + 高光
+  for (let i = 0; i < 5; i++) {
+    let x = rand() * T, y = rand() * T;
+    const len = 10 + rand() * 14;
+    for (let j = 0; j < len; j++) {
+      img.set(x, y, 235, 248, 255);
+      x += 1; y += rand() < 0.7 ? 1 : 0;
+    }
+  }
+  for (let i = 0; i < 6; i++) {
+    const x = (rand() * T) | 0, y = (rand() * T) | 0;
+    img.set(x, y, 255, 255, 255); img.set(x + 1, y, 255, 255, 255);
+  }
+  grain(img, rand, 4);
+}
+
+function paintSandstone(img, rand) {
+  fillRamp(img, rand, ['#cbb98a', '#d9c898', '#e2d3a4'], { period: 8, octaves: 2 });
+  // 水平沉积条带
+  for (let y = 0; y < T; y++) {
+    const band = Math.sin(y * 0.5) * 5 + (y % 11 === 0 ? -14 : 0);
+    for (let x = 0; x < T; x++) img.add(x, y, band);
+  }
+  for (let i = 0; i < 20; i++) img.add((rand() * T) | 0, (rand() * T) | 0, -18);
+  grain(img, rand, 6);
+}
+
+function paintCoalOre(img, rand) {
+  paintStone(img, rand);
+  orePatches(img, rand, 9, [58, 58, 60], [34, 34, 36], [96, 96, 100]);
+}
+
+function paintGoldOre(img, rand) {
+  paintStone(img, rand);
+  orePatches(img, rand, 8, [238, 200, 92], [186, 146, 44], [255, 236, 150]);
+}
+
+function paintGemOre(img, rand) {
+  paintStone(img, rand);
+  orePatches(img, rand, 7, [126, 230, 230], [58, 168, 178], [222, 255, 255]);
+}
+
+function paintObsidian(img, rand) {
+  fillRamp(img, rand, ['#100c16', '#1c1424', '#281c34', '#161020'], { period: 8, octaves: 3 });
+  for (let i = 0; i < 5; i++) vein(img, rand, '#3c2a52', '#5a4078', 10 + rand() * 12, 1);
+  for (let i = 0; i < 5; i++) {
+    const x = (rand() * T) | 0, y = (rand() * T) | 0;
+    img.set(x, y, 150, 130, 190); // 紫色光泽点
+  }
+  grain(img, rand, 5);
+}
+
+function paintStoneBricks(img, rand) {
+  paintBricks(img, rand, ['#6f6f6f', '#7d7d7d', '#8a8a8a', '#767676'], ['#4a4a4a', '#555555', '#5f5f5f']);
+}
+
+// 金属/宝石块：斜面倒角 + 高光
+function paintShinyBlock(img, rand, stops, edgeLight, edgeDark) {
+  fillRamp(img, rand, stops, { period: 8, octaves: 2 });
+  for (let i = 0; i < T; i++) {
+    for (let e = 0; e < 4; e++) {
+      img.tint(i, e, edgeLight[0], edgeLight[1], edgeLight[2]);
+      img.tint(e, i, edgeLight[0], edgeLight[1], edgeLight[2]);
+      img.tint(i, T - 1 - e, edgeDark[0], edgeDark[1], edgeDark[2]);
+      img.tint(T - 1 - e, i, edgeDark[0], edgeDark[1], edgeDark[2]);
+    }
+  }
+  // 斜向高光
+  for (let d = 10; d < 30; d++) {
+    img.add(d, 40 - d, 26);
+    img.add(d + 1, 40 - d, 18);
+  }
+  grain(img, rand, 5);
+}
+
+function paintGoldBlock(img, rand) {
+  paintShinyBlock(img, rand, ['#c89b30', '#e0b83e', '#f0cc5a', '#e0b83e'], [24, 20, 8], [-26, -22, -10]);
+}
+
+function paintGemBlock(img, rand) {
+  paintShinyBlock(img, rand, ['#3aa8b8', '#5ecfd6', '#8ae4e6', '#5ecfd6'], [26, 26, 26], [-28, -24, -20]);
+}
+
+function paintBookshelfSide(img, rand) {
+  paintPlanks(img, rand);
+  // 两层书架：彩色书脊 + 顶部页缘
+  const spines = [[150, 60, 50], [70, 100, 150], [90, 130, 70], [140, 110, 60], [110, 70, 130], [160, 130, 90]];
+  for (const shelfY of [8, 36]) {
+    // 架格阴影底
+    for (let y = shelfY; y < shelfY + 20; y++)
+      for (let x = 4; x < 60; x++) img.set(x, y, 38, 28, 16);
+    let x = 5;
+    while (x < 58) {
+      const w = 4 + ((rand() * 4) | 0);
+      const c = spines[(rand() * spines.length) | 0];
+      const hgt = 16 + ((rand() * 3) | 0);
+      for (let dy = 0; dy < hgt; dy++)
+        for (let dx = 0; dx < w && x + dx < 58; dx++) {
+          const edge = dx === 0 || dx === w - 1;
+          img.set(x + dx, shelfY + 20 - hgt + dy, c[0] - (edge ? 30 : 0), c[1] - (edge ? 30 : 0), c[2] - (edge ? 30 : 0));
+        }
+      if (rand() < 0.5) for (let dx = 1; dx < w - 1 && x + dx < 58; dx++)
+        img.set(x + dx, shelfY + 20 - hgt, 226, 220, 200); // 页缘
+      x += w + (rand() < 0.25 ? 2 : 0);
+    }
+  }
+}
+
 const PAINTERS = {
   [TILE.GRASS_TOP]: paintGrassTop,
   [TILE.GRASS_SIDE]: paintGrassSide,
@@ -488,6 +665,20 @@ const PAINTERS = {
   [TILE.SULFUR_BRICKS]: paintSulfurBricks,
   [TILE.WOOL]: paintWool,
   [TILE.IRON_ORE]: paintIronOre,
+  [TILE.COBBLE]: paintCobble,
+  [TILE.GRAVEL]: paintGravel,
+  [TILE.SNOW]: paintSnow,
+  [TILE.ICE]: paintIce,
+  [TILE.SANDSTONE]: paintSandstone,
+  [TILE.COAL_ORE]: paintCoalOre,
+  [TILE.GOLD_ORE]: paintGoldOre,
+  [TILE.GEM_ORE]: paintGemOre,
+  [TILE.OBSIDIAN]: paintObsidian,
+  [TILE.MOSSY_COBBLE]: paintMossyCobble,
+  [TILE.STONE_BRICKS]: paintStoneBricks,
+  [TILE.GOLD_BLOCK]: paintGoldBlock,
+  [TILE.GEM_BLOCK]: paintGemBlock,
+  [TILE.BOOKSHELF_SIDE]: paintBookshelfSide,
 };
 
 // ---------- 纹理装配 ----------
@@ -857,13 +1048,15 @@ function thickLine(img, x0, y0, x1, y1, w, rgb, edgeRgb) {
 const HANDLE = [125, 90, 50];
 const HANDLE_DARK = [93, 66, 36];
 const MATERIALS = {
-  1: { main: [168, 133, 90], dark: [125, 97, 52] },   // 木
-  2: { main: [154, 154, 154], dark: [111, 111, 111] }, // 石
-  3: { main: [226, 228, 234], dark: [159, 163, 173] }, // 铁
+  wood: { main: [168, 133, 90], dark: [125, 97, 52] },
+  stone: { main: [154, 154, 154], dark: [111, 111, 111] },
+  iron: { main: [226, 228, 234], dark: [159, 163, 173] },
+  gold: { main: [244, 208, 88], dark: [190, 148, 40] },
+  gem: { main: [138, 228, 230], dark: [58, 168, 178] },
 };
 
-function paintTool(cls, tier) {
-  const M = MATERIALS[tier];
+function paintTool(cls, mat) {
+  const M = MATERIALS[mat];
   return (img) => {
     if (cls === 'sword') {
       // 长刃 + 护手 + 短柄
@@ -908,27 +1101,64 @@ function paintStick(img) {
   thickLine(img, 44, 16, 18, 46, 7, HANDLE, HANDLE_DARK);
 }
 
-function paintIron(img) {
-  // 铁锭：梯形锭体 + 亮顶面
-  for (let dy = 0; dy < 18; dy++) {
-    const inset = 6 - ((dy / 3) | 0);
-    for (let dx = inset; dx < 44 - inset; dx++) {
-      const top = dy < 5;
-      const edge = dy === 0 || dy === 17 || dx === inset || dx === 43 - inset;
-      let c = top ? [236, 238, 244] : [204, 208, 218];
-      if (edge) c = [150, 154, 166];
-      img.set(10 + dx, 26 + dy, c[0], c[1], c[2]);
+// 锭：梯形锭体 + 亮顶面（铁/金共用）
+function paintIngot(top, body, edge) {
+  return (img) => {
+    for (let dy = 0; dy < 18; dy++) {
+      const inset = 6 - ((dy / 3) | 0);
+      for (let dx = inset; dx < 44 - inset; dx++) {
+        const isTop = dy < 5;
+        const isEdge = dy === 0 || dy === 17 || dx === inset || dx === 43 - inset;
+        let c = isTop ? top : body;
+        if (isEdge) c = edge;
+        img.set(10 + dx, 26 + dy, c[0], c[1], c[2]);
+      }
+    }
+  };
+}
+
+function paintCoal(img) {
+  // 不规则煤块：多边形黑团 + 灰高光棱
+  const rnd = rng(0xc0a1);
+  for (let y = 14; y < 52; y++)
+    for (let x = 12; x < 52; x++) {
+      const dx = (x - 32) / 19, dy = (y - 33) / 17;
+      const warp = Math.sin(x * 0.5) * 0.14 + Math.cos(y * 0.42) * 0.12;
+      if (dx * dx + dy * dy + warp > 1) continue;
+      let c = [38, 38, 42];
+      if (rnd() < 0.12) c = [58, 58, 64];
+      if (rnd() < 0.05) c = [92, 92, 100];
+      img.set(x, y, c[0], c[1], c[2]);
+    }
+  for (let i = 0; i < 5; i++) img.set(22 + i, 24 - i, 110, 110, 120); // 高光棱线
+}
+
+function paintGem(img) {
+  // 菱形宝石：亮顶刻面 + 深色底刻面
+  for (let y = 0; y < 40; y++) {
+    const half = y < 14 ? 6 + y * 1.6 : Math.max(0, 28 - (y - 14) * 1.1);
+    for (let dx = -half; dx <= half; dx++) {
+      const facet = Math.abs(dx) > half - 5 || y < 5;
+      let c = y < 14 ? (facet ? [196, 250, 250] : [126, 230, 230]) : (facet ? [58, 168, 178] : [88, 200, 208]);
+      img.set(32 + dx, 12 + y, c[0], c[1], c[2]);
     }
   }
+  img.set(26, 18, 255, 255, 255); img.set(27, 18, 255, 255, 255); img.set(26, 19, 255, 255, 255);
 }
 
 export function createItemAssets() {
   const defs = {
     100: paintMeat, 101: paintApple, 102: paintRotten,
-    103: paintStick, 104: paintIron,
-    110: paintTool('pickaxe', 1), 111: paintTool('axe', 1), 112: paintTool('shovel', 1), 113: paintTool('sword', 1),
-    114: paintTool('pickaxe', 2), 115: paintTool('axe', 2), 116: paintTool('shovel', 2), 117: paintTool('sword', 2),
-    118: paintTool('pickaxe', 3), 119: paintTool('axe', 3), 120: paintTool('shovel', 3), 121: paintTool('sword', 3),
+    103: paintStick,
+    104: paintIngot([236, 238, 244], [204, 208, 218], [150, 154, 166]),
+    105: paintCoal,
+    106: paintIngot([250, 224, 120], [232, 190, 70], [178, 138, 36]),
+    107: paintGem,
+    110: paintTool('pickaxe', 'wood'), 111: paintTool('axe', 'wood'), 112: paintTool('shovel', 'wood'), 113: paintTool('sword', 'wood'),
+    114: paintTool('pickaxe', 'stone'), 115: paintTool('axe', 'stone'), 116: paintTool('shovel', 'stone'), 117: paintTool('sword', 'stone'),
+    118: paintTool('pickaxe', 'iron'), 119: paintTool('axe', 'iron'), 120: paintTool('shovel', 'iron'), 121: paintTool('sword', 'iron'),
+    122: paintTool('pickaxe', 'gold'), 123: paintTool('axe', 'gold'), 124: paintTool('shovel', 'gold'), 125: paintTool('sword', 'gold'),
+    126: paintTool('pickaxe', 'gem'), 127: paintTool('axe', 'gem'), 128: paintTool('shovel', 'gem'), 129: paintTool('sword', 'gem'),
   };
   const icons = {}, textures = {};
   for (const [id, painter] of Object.entries(defs)) {

@@ -432,9 +432,13 @@ body.touch #stats { bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
 
 #inv-grid {
   display: grid;
-  grid-template-columns: repeat(5, 76px);
+  grid-template-columns: repeat(6, 76px);
   gap: 6px;
   justify-content: center;
+  max-height: 470px;
+  overflow-y: auto;
+  padding-right: 4px;
+  touch-action: pan-y;
 }
 .inv-cell {
   width: 76px; height: 84px;

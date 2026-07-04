@@ -77,6 +77,7 @@ export class Hud {
       img.src = icons[id];
       img.alt = itemName(id);
       img.draggable = false;
+      img.onerror = () => { img.style.display = 'none'; }; // 兜底：加载失败不显示破图
       const count = document.createElement('span');
       count.className = 'count';
       const dur = document.createElement('div');
@@ -141,6 +142,7 @@ export class Hud {
       const img = document.createElement('img');
       img.src = icons[id];
       img.draggable = false;
+      img.onerror = () => { img.style.display = 'none'; };
       const label = document.createElement('span');
       label.textContent = itemName(id);
       const cnt = document.createElement('span');
@@ -165,6 +167,7 @@ export class Hud {
       const img = document.createElement('img');
       img.src = icons[recipe.out[0]];
       img.draggable = false;
+      img.onerror = () => { img.style.display = 'none'; };
       const name = document.createElement('span');
       name.className = 'craft-name';
       name.textContent = itemName(recipe.out[0]) + (recipe.out[1] > 1 ? ' ×' + recipe.out[1] : '');

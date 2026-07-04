@@ -154,19 +154,31 @@ export class World {
         const sandy = h <= SEA + 1;
         const col = x + z * 16;
         const gx = cx * 16 + x, gz = cz * 16 + z;
+        const snowy = !sandy && h >= 42; // 高山雪顶
         for (let y = 0; y <= h; y++) {
           let id;
           if (y === 0) id = BLOCK.BEDROCK;
           else if (y < h - 3) {
             id = BLOCK.STONE;
-            // 铁矿脉：2x2x2 团簇，越深越常见
-            if (y < 30 &&
-                this.noise.hash3((gx >> 1) + 7, (y >> 1) - 3, (gz >> 1) + 11) < (y < 16 ? 0.022 : 0.012)) {
+            // 矿脉与矿囊：2x2x2 团簇哈希，稀有度递增、越深越多
+            const cxx = gx >> 1, cyy = y >> 1, czz = gz >> 1;
+            if (y <= 4 && this.noise.hash3(cxx + 91, cyy + 77, czz - 55) < 0.05) {
+              id = BLOCK.OBSIDIAN;      // 基岩附近的黑曜石
+            } else if (y < 10 && this.noise.hash3(cxx - 31, cyy + 17, czz + 43) < 0.010) {
+              id = BLOCK.GEM_ORE;       // 蓝晶：最深最稀有
+            } else if (y < 16 && this.noise.hash3(cxx + 53, cyy - 29, czz + 19) < 0.012) {
+              id = BLOCK.GOLD_ORE;
+            } else if (y < 30 &&
+                this.noise.hash3(cxx + 7, cyy - 3, czz + 11) < (y < 16 ? 0.022 : 0.012)) {
               id = BLOCK.IRON_ORE;
+            } else if (y < 40 && this.noise.hash3(cxx - 13, cyy + 37, czz - 7) < 0.028) {
+              id = BLOCK.COAL_ORE;      // 煤：最浅最常见
+            } else if (y < 36 && this.noise.hash3(cxx + 67, cyy + 5, czz + 71) < 0.014) {
+              id = BLOCK.GRAVEL;        // 沙砾矿囊
             }
           }
           else if (y < h) id = sandy ? BLOCK.SAND : BLOCK.DIRT;
-          else id = sandy ? BLOCK.SAND : BLOCK.GRASS;
+          else id = sandy ? BLOCK.SAND : snowy ? BLOCK.SNOW : BLOCK.GRASS;
           data[col + y * 256] = id;
         }
         for (let y = h + 1; y <= SEA; y++) data[col + y * 256] = BLOCK.WATER;

@@ -19,9 +19,23 @@ export const BLOCK = {
   SULFUR_BRICKS: 15,
   WOOL: 16,
   IRON_ORE: 17,
+  COBBLE: 18,
+  GRAVEL: 19,
+  SNOW: 20,
+  ICE: 21,
+  SANDSTONE: 22,
+  COAL_ORE: 23,
+  GOLD_ORE: 24,
+  GEM_ORE: 25,
+  OBSIDIAN: 26,
+  MOSSY_COBBLE: 27,
+  STONE_BRICKS: 28,
+  GOLD_BLOCK: 29,
+  GEM_BLOCK: 30,
+  BOOKSHELF: 31,
 };
 
-// 贴图图集中的 tile 序号（4 列 x 8 行图集）
+// 贴图图集中的 tile 序号（8 列 x 8 行图集）
 export const TILE = {
   GRASS_TOP: 0,
   GRASS_SIDE: 1,
@@ -41,6 +55,20 @@ export const TILE = {
   SULFUR_BRICKS: 15,
   WOOL: 16,
   IRON_ORE: 17,
+  COBBLE: 18,
+  GRAVEL: 19,
+  SNOW: 20,
+  ICE: 21,
+  SANDSTONE: 22,
+  COAL_ORE: 23,
+  GOLD_ORE: 24,
+  GEM_ORE: 25,
+  OBSIDIAN: 26,
+  MOSSY_COBBLE: 27,
+  STONE_BRICKS: 28,
+  GOLD_BLOCK: 29,
+  GEM_BLOCK: 30,
+  BOOKSHELF_SIDE: 31,
 };
 
 function same(t) {
@@ -76,13 +104,30 @@ def(BLOCK.CINNABAR_BRICKS, { name: '朱砂砖', hardness: 2.2,  toolClass: 'pick
 def(BLOCK.SULFUR_BRICKS,   { name: '硫磺砖', hardness: 1.8,  toolClass: 'pickaxe', needsTier: 1, tiles: same(TILE.SULFUR_BRICKS) });
 def(BLOCK.WOOL,            { name: '绒毛块', hardness: 0.6,  tiles: same(TILE.WOOL) });
 def(BLOCK.IRON_ORE,        { name: '铁矿石', hardness: 3.0,  toolClass: 'pickaxe', needsTier: 2, tiles: same(TILE.IRON_ORE) });
+def(BLOCK.COBBLE,          { name: '圆石', hardness: 2.0,  toolClass: 'pickaxe', needsTier: 1, tiles: same(TILE.COBBLE) });
+def(BLOCK.GRAVEL,          { name: '沙砾', hardness: 0.6,  toolClass: 'shovel', tiles: same(TILE.GRAVEL) });
+def(BLOCK.SNOW,            { name: '雪块', hardness: 0.25, toolClass: 'shovel', tiles: same(TILE.SNOW) });
+def(BLOCK.ICE,             { name: '冰块', hardness: 0.5,  toolClass: 'pickaxe', tiles: same(TILE.ICE) });
+def(BLOCK.SANDSTONE,       { name: '沙岩', hardness: 1.6,  toolClass: 'pickaxe', needsTier: 1, tiles: same(TILE.SANDSTONE) });
+def(BLOCK.COAL_ORE,        { name: '煤矿石', hardness: 3.0,  toolClass: 'pickaxe', needsTier: 1, tiles: same(TILE.COAL_ORE) });
+def(BLOCK.GOLD_ORE,        { name: '金矿石', hardness: 3.0,  toolClass: 'pickaxe', needsTier: 3, tiles: same(TILE.GOLD_ORE) });
+def(BLOCK.GEM_ORE,         { name: '蓝晶矿石', hardness: 3.2, toolClass: 'pickaxe', needsTier: 3, tiles: same(TILE.GEM_ORE) });
+def(BLOCK.OBSIDIAN,        { name: '黑曜石', hardness: 15,  toolClass: 'pickaxe', needsTier: 4, tiles: same(TILE.OBSIDIAN) });
+def(BLOCK.MOSSY_COBBLE,    { name: '苔石', hardness: 2.0,  toolClass: 'pickaxe', needsTier: 1, tiles: same(TILE.MOSSY_COBBLE) });
+def(BLOCK.STONE_BRICKS,    { name: '石砖', hardness: 2.0,  toolClass: 'pickaxe', needsTier: 1, tiles: same(TILE.STONE_BRICKS) });
+def(BLOCK.GOLD_BLOCK,      { name: '金块', hardness: 3.0,  toolClass: 'pickaxe', needsTier: 2, tiles: same(TILE.GOLD_BLOCK) });
+def(BLOCK.GEM_BLOCK,       { name: '蓝晶块', hardness: 4.0,  toolClass: 'pickaxe', needsTier: 2, tiles: same(TILE.GEM_BLOCK) });
+def(BLOCK.BOOKSHELF,       { name: '书柜', hardness: 1.5,  toolClass: 'axe', tiles: { top: TILE.PLANKS, side: TILE.BOOKSHELF_SIDE, bottom: TILE.PLANKS } });
 
 // ---------- 物品（非方块，id 从 100 起）----------
 export const ITEM = {
   MEAT: 100, APPLE: 101, ROTTEN: 102, STICK: 103, IRON: 104,
+  COAL: 105, GOLD: 106, GEM: 107,
   WOOD_PICK: 110, WOOD_AXE: 111, WOOD_SHOVEL: 112, WOOD_SWORD: 113,
   STONE_PICK: 114, STONE_AXE: 115, STONE_SHOVEL: 116, STONE_SWORD: 117,
   IRON_PICK: 118, IRON_AXE: 119, IRON_SHOVEL: 120, IRON_SWORD: 121,
+  GOLD_PICK: 122, GOLD_AXE: 123, GOLD_SHOVEL: 124, GOLD_SWORD: 125,
+  GEM_PICK: 126, GEM_AXE: 127, GEM_SHOVEL: 128, GEM_SWORD: 129,
 };
 
 export const FOODS = {
@@ -94,26 +139,31 @@ export const FOODS = {
 export const MISC_ITEMS = {
   [ITEM.STICK]: { name: '木棍' },
   [ITEM.IRON]:  { name: '铁锭' },
+  [ITEM.COAL]:  { name: '煤' },
+  [ITEM.GOLD]:  { name: '金锭' },
+  [ITEM.GEM]:   { name: '蓝晶' },
 };
 
-// 工具：class 决定加速的方块类；tier 1木 2石 3铁；dur 耐久；dmg 攻击力
+// 工具：class 决定加速的方块类；tier 采集等级(1木 2石 3铁 4蓝晶)；
+// speed 挖掘倍速；dur 耐久；dmg 攻击力。金=速度最快但脆且采集等级低。
 export const TOOLS = {};
-function defTools(tier, matName, dur, dmg, ids) {
+function defTools(tier, speed, matName, dur, dmg, ids) {
   const [pick, axe, shovel, sword] = ids;
-  TOOLS[pick]   = { name: matName + '镐', class: 'pickaxe', tier, dur };
-  TOOLS[axe]    = { name: matName + '斧', class: 'axe', tier, dur };
-  TOOLS[shovel] = { name: matName + '锹', class: 'shovel', tier, dur };
-  TOOLS[sword]  = { name: matName + '剑', class: 'sword', tier, dur, dmg };
+  TOOLS[pick]   = { name: matName + '镐', class: 'pickaxe', tier, speed, dur };
+  TOOLS[axe]    = { name: matName + '斧', class: 'axe', tier, speed, dur };
+  TOOLS[shovel] = { name: matName + '锹', class: 'shovel', tier, speed, dur };
+  TOOLS[sword]  = { name: matName + '剑', class: 'sword', tier, speed, dur, dmg };
 }
-defTools(1, '木', 60, 4,  [ITEM.WOOD_PICK, ITEM.WOOD_AXE, ITEM.WOOD_SHOVEL, ITEM.WOOD_SWORD]);
-defTools(2, '石', 132, 5, [ITEM.STONE_PICK, ITEM.STONE_AXE, ITEM.STONE_SHOVEL, ITEM.STONE_SWORD]);
-defTools(3, '铁', 251, 6, [ITEM.IRON_PICK, ITEM.IRON_AXE, ITEM.IRON_SHOVEL, ITEM.IRON_SWORD]);
+defTools(1, 3,  '木', 60, 4,   [ITEM.WOOD_PICK, ITEM.WOOD_AXE, ITEM.WOOD_SHOVEL, ITEM.WOOD_SWORD]);
+defTools(2, 5,  '石', 132, 5,  [ITEM.STONE_PICK, ITEM.STONE_AXE, ITEM.STONE_SHOVEL, ITEM.STONE_SWORD]);
+defTools(3, 8,  '铁', 251, 6,  [ITEM.IRON_PICK, ITEM.IRON_AXE, ITEM.IRON_SHOVEL, ITEM.IRON_SWORD]);
+defTools(1, 12, '金', 33, 4,   [ITEM.GOLD_PICK, ITEM.GOLD_AXE, ITEM.GOLD_SHOVEL, ITEM.GOLD_SWORD]);
+defTools(4, 11, '蓝晶', 780, 7, [ITEM.GEM_PICK, ITEM.GEM_AXE, ITEM.GEM_SHOVEL, ITEM.GEM_SWORD]);
 
-// 挖掘耗时：正确工具按阶加速；镐类方块徒手更慢
-const TIER_SPEED = [1, 3, 5, 8];
+// 挖掘耗时：正确工具按倍速加速；镐类方块徒手更慢
 export function breakTime(props, toolDef) {
   let t = props.hardness * (props.toolClass === 'pickaxe' ? 2.5 : 1.2);
-  if (toolDef && toolDef.class === props.toolClass) t /= TIER_SPEED[toolDef.tier];
+  if (toolDef && toolDef.class === props.toolClass) t /= toolDef.speed;
   return Math.max(0.15, t);
 }
 
@@ -131,31 +181,47 @@ export function itemName(id) {
   return FOODS[id]?.name ?? MISC_ITEMS[id]?.name ?? TOOLS[id]?.name ?? PROPS[id]?.name ?? '?';
 }
 
-// 挖掘掉落映射：草掉泥土，铁矿掉铁锭，树叶低概率掉苹果（在 interact 里处理）
+// 挖掘掉落映射：草掉泥土，石头掉圆石，矿石掉对应材料，
+// 树叶低概率掉苹果（在 interact 里处理）
 export function dropOf(id) {
   if (id === BLOCK.GRASS) return BLOCK.DIRT;
+  if (id === BLOCK.STONE) return BLOCK.COBBLE;
   if (id === BLOCK.IRON_ORE) return ITEM.IRON;
+  if (id === BLOCK.COAL_ORE) return ITEM.COAL;
+  if (id === BLOCK.GOLD_ORE) return ITEM.GOLD;
+  if (id === BLOCK.GEM_ORE) return ITEM.GEM;
   if (id === BLOCK.LEAVES) return null; // 苹果概率另行处理
   if (id === BLOCK.WATER || id === BLOCK.BEDROCK || id === BLOCK.AIR) return null;
   return id;
 }
 
 // ---------- 合成配方 ----------
+function toolRecipes(mat, ids) {
+  const [pick, axe, shovel, sword] = ids;
+  return [
+    { out: [pick, 1],   in: [[mat, 3], [ITEM.STICK, 2]] },
+    { out: [axe, 1],    in: [[mat, 3], [ITEM.STICK, 2]] },
+    { out: [shovel, 1], in: [[mat, 1], [ITEM.STICK, 2]] },
+    { out: [sword, 1],  in: [[mat, 2], [ITEM.STICK, 1]] },
+  ];
+}
+
 export const RECIPES = [
   { out: [BLOCK.PLANKS, 4], in: [[BLOCK.LOG, 1]] },
   { out: [ITEM.STICK, 4],   in: [[BLOCK.PLANKS, 2]] },
-  { out: [ITEM.WOOD_PICK, 1],   in: [[BLOCK.PLANKS, 3], [ITEM.STICK, 2]] },
-  { out: [ITEM.WOOD_AXE, 1],    in: [[BLOCK.PLANKS, 3], [ITEM.STICK, 2]] },
-  { out: [ITEM.WOOD_SHOVEL, 1], in: [[BLOCK.PLANKS, 1], [ITEM.STICK, 2]] },
-  { out: [ITEM.WOOD_SWORD, 1],  in: [[BLOCK.PLANKS, 2], [ITEM.STICK, 1]] },
-  { out: [ITEM.STONE_PICK, 1],   in: [[BLOCK.STONE, 3], [ITEM.STICK, 2]] },
-  { out: [ITEM.STONE_AXE, 1],    in: [[BLOCK.STONE, 3], [ITEM.STICK, 2]] },
-  { out: [ITEM.STONE_SHOVEL, 1], in: [[BLOCK.STONE, 1], [ITEM.STICK, 2]] },
-  { out: [ITEM.STONE_SWORD, 1],  in: [[BLOCK.STONE, 2], [ITEM.STICK, 1]] },
-  { out: [ITEM.IRON_PICK, 1],   in: [[ITEM.IRON, 3], [ITEM.STICK, 2]] },
-  { out: [ITEM.IRON_AXE, 1],    in: [[ITEM.IRON, 3], [ITEM.STICK, 2]] },
-  { out: [ITEM.IRON_SHOVEL, 1], in: [[ITEM.IRON, 1], [ITEM.STICK, 2]] },
-  { out: [ITEM.IRON_SWORD, 1],  in: [[ITEM.IRON, 2], [ITEM.STICK, 1]] },
+  ...toolRecipes(BLOCK.PLANKS, [ITEM.WOOD_PICK, ITEM.WOOD_AXE, ITEM.WOOD_SHOVEL, ITEM.WOOD_SWORD]),
+  ...toolRecipes(BLOCK.COBBLE, [ITEM.STONE_PICK, ITEM.STONE_AXE, ITEM.STONE_SHOVEL, ITEM.STONE_SWORD]),
+  ...toolRecipes(ITEM.IRON, [ITEM.IRON_PICK, ITEM.IRON_AXE, ITEM.IRON_SHOVEL, ITEM.IRON_SWORD]),
+  ...toolRecipes(ITEM.GOLD, [ITEM.GOLD_PICK, ITEM.GOLD_AXE, ITEM.GOLD_SHOVEL, ITEM.GOLD_SWORD]),
+  ...toolRecipes(ITEM.GEM, [ITEM.GEM_PICK, ITEM.GEM_AXE, ITEM.GEM_SHOVEL, ITEM.GEM_SWORD]),
+  // 建材加工
+  { out: [BLOCK.STONE, 1],        in: [[BLOCK.COBBLE, 1]] },
+  { out: [BLOCK.STONE_BRICKS, 4], in: [[BLOCK.STONE, 4]] },
+  { out: [BLOCK.SANDSTONE, 4],    in: [[BLOCK.SAND, 4]] },
+  { out: [BLOCK.MOSSY_COBBLE, 1], in: [[BLOCK.COBBLE, 1], [BLOCK.LEAVES, 1]] },
+  { out: [BLOCK.BOOKSHELF, 1],    in: [[BLOCK.PLANKS, 6]] },
+  { out: [BLOCK.GOLD_BLOCK, 1],   in: [[ITEM.GOLD, 9]] },
+  { out: [BLOCK.GEM_BLOCK, 1],    in: [[ITEM.GEM, 9]] },
 ];
 
 // 快捷栏默认 9 格
@@ -166,20 +232,25 @@ export const HOTBAR_BLOCKS = [
 
 // 方块清单（E 键）里可选的全部方块
 export const PLACEABLE_BLOCKS = [
-  BLOCK.GRASS, BLOCK.DIRT, BLOCK.STONE, BLOCK.LOG, BLOCK.LEAVES,
-  BLOCK.PLANKS, BLOCK.SAND, BLOCK.GLASS, BLOCK.BRICK,
+  BLOCK.GRASS, BLOCK.DIRT, BLOCK.STONE, BLOCK.COBBLE, BLOCK.MOSSY_COBBLE,
+  BLOCK.STONE_BRICKS, BLOCK.LOG, BLOCK.LEAVES, BLOCK.PLANKS, BLOCK.BOOKSHELF,
+  BLOCK.SAND, BLOCK.SANDSTONE, BLOCK.GRAVEL, BLOCK.SNOW, BLOCK.ICE,
+  BLOCK.GLASS, BLOCK.BRICK, BLOCK.WOOL,
+  BLOCK.COAL_ORE, BLOCK.IRON_ORE, BLOCK.GOLD_ORE, BLOCK.GEM_ORE,
+  BLOCK.GOLD_BLOCK, BLOCK.GEM_BLOCK, BLOCK.OBSIDIAN,
   BLOCK.SULFUR, BLOCK.SULFUR_BRICKS, BLOCK.CINNABAR, BLOCK.CINNABAR_BRICKS,
-  BLOCK.WOOL, BLOCK.IRON_ORE,
 ];
 
 // 物品清单 = 方块 + 材料 + 食物 + 工具
 export const ALL_ITEMS = [
   ...PLACEABLE_BLOCKS,
-  ITEM.STICK, ITEM.IRON,
+  ITEM.STICK, ITEM.COAL, ITEM.IRON, ITEM.GOLD, ITEM.GEM,
   ITEM.MEAT, ITEM.APPLE, ITEM.ROTTEN,
   ITEM.WOOD_PICK, ITEM.WOOD_AXE, ITEM.WOOD_SHOVEL, ITEM.WOOD_SWORD,
   ITEM.STONE_PICK, ITEM.STONE_AXE, ITEM.STONE_SHOVEL, ITEM.STONE_SWORD,
   ITEM.IRON_PICK, ITEM.IRON_AXE, ITEM.IRON_SHOVEL, ITEM.IRON_SWORD,
+  ITEM.GOLD_PICK, ITEM.GOLD_AXE, ITEM.GOLD_SHOVEL, ITEM.GOLD_SWORD,
+  ITEM.GEM_PICK, ITEM.GEM_AXE, ITEM.GEM_SHOVEL, ITEM.GEM_SWORD,
 ];
 
 // 面剔除规则：邻居是空气则画；邻居不透明则不画；
