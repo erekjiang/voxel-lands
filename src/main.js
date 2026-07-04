@@ -38,7 +38,7 @@ let touchMode =
 // ---------- 渲染器 ----------
 const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, touchMode ? 1.75 : 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, touchMode ? 1.5 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 const scene = new THREE.Scene();
@@ -56,8 +56,8 @@ scene.add(ambient);
 // ---------- 贴图与材质 ----------
 const tex = createTextures();
 const maxAniso = renderer.capabilities.getMaxAnisotropy();
-tex.atlasTexture.anisotropy = Math.min(8, maxAniso);
-tex.waterTexture.anisotropy = Math.min(4, maxAniso);
+tex.atlasTexture.anisotropy = Math.min(touchMode ? 4 : 8, maxAniso);
+tex.waterTexture.anisotropy = Math.min(touchMode ? 2 : 4, maxAniso);
 
 const materials = {
   opaque: new THREE.MeshLambertMaterial({ map: tex.atlasTexture, vertexColors: true }),
@@ -104,10 +104,9 @@ let timeOfDay = save?.time ?? 0.06; // 清晨开局
 
 const world = new World(scene, materials, seed);
 world.loadEdits(save?.edits);
-if (touchMode) {
-  document.body.classList.add('touch');
-  world.viewDist = 4; // 移动端缩小视距保帧率
-}
+const BASE_VIEW_DIST = touchMode ? 4 : 5;
+world.viewDist = BASE_VIEW_DIST;
+if (touchMode) document.body.classList.add('touch');
 
 const player = new Player(world, camera);
 const spawn = world.findSpawn();
@@ -473,11 +472,28 @@ const clock = new THREE.Clock();
 let fps = 0, fpsAcc = 0, fpsFrames = 0, debugTimer = 0;
 let baseFov = 75;
 
+// 帧率自适应视距：持续掉帧则收缩，充裕则恢复
+let adaptTimer = 0;
+function adaptQuality(dt) {
+  if (!running) return;
+  adaptTimer += dt;
+  if (adaptTimer < 4) return;
+  adaptTimer = 0;
+  if (fps > 0 && fps < 24 && world.viewDist > 3) {
+    world.viewDist--;
+    world.lastCX = null; // 触发重建加载队列并卸载远处区块
+  } else if (fps > 50 && world.viewDist < BASE_VIEW_DIST) {
+    world.viewDist++;
+    world.lastCX = null;
+  }
+}
+
 function loop() {
   requestAnimationFrame(loop);
   const dt = Math.min(clock.getDelta(), 0.05);
 
-  world.update(player.pos.x, player.pos.z, running ? 2 : 6);
+  // 运行时每帧最多建 1 个网格、生成 2 块地形数据，摊平卡顿尖峰
+  world.update(player.pos.x, player.pos.z, running ? 1 : 4, running ? 2 : 9);
   const { isNight, sky } = updateDayNight(dt);
 
   if (running) {
@@ -501,7 +517,7 @@ function loop() {
   cloudMesh.position.set(camera.position.x, 72, camera.position.z);
   tex.cloudTexture.offset.x = (t * 0.0016) % 1;
 
-  // 相机入水的雾效
+  // 相机入水的雾效；日常雾距跟随视距（隐藏未加载区块边缘）
   const camBlock = world.getBlock(
     Math.floor(camera.position.x),
     Math.floor(camera.position.y),
@@ -514,9 +530,10 @@ function loop() {
     scene.fog.far = 22;
     renderer.setClearColor(WATER_FOG);
   } else {
+    const fogFar = world.viewDist * 16 - 6;
     scene.fog.color.copy(sky);
-    scene.fog.near = 55;
-    scene.fog.far = 95;
+    scene.fog.near = fogFar - 34;
+    scene.fog.far = fogFar;
     renderer.setClearColor(sky);
   }
   hud.setUnderwater(underwater);
@@ -529,6 +546,7 @@ function loop() {
     fps = Math.round(fpsFrames / fpsAcc);
     fpsAcc = 0; fpsFrames = 0;
   }
+  adaptQuality(dt);
   if (debugTimer >= 0.25) {
     debugTimer = 0;
     const p = player.pos;

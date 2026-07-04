@@ -2,9 +2,51 @@
 // 每 chunk 合并几何体（只输出可见面，带 4 点 AO 与水面下沉），编辑记录用于存档。
 
 import * as THREE from 'three';
-import { BLOCK, PROPS, faceVisible } from './blocks.js';
+import { BLOCK, PROPS, OPAQUE_TABLE } from './blocks.js';
 import { makeNoise } from './noise.js';
 import { tileUV } from './textures.js';
+
+// 复用的网格构建缓冲：按面写入定长 TypedArray，避免每次构建产生大量数组垃圾
+class MeshBuilder {
+  constructor(cap = 4096) {
+    this.alloc(cap);
+  }
+  alloc(cap) {
+    this.cap = cap;
+    this.pos = new Float32Array(cap * 12);
+    this.norm = new Float32Array(cap * 12);
+    this.uv = new Float32Array(cap * 8);
+    this.col = new Float32Array(cap * 12);
+    this.idx = new Uint32Array(cap * 6);
+    this.f = 0; // 已写入面数
+  }
+  reset() { this.f = 0; }
+  ensure() {
+    if (this.f >= this.cap) {
+      const { pos, norm, uv, col, idx } = this;
+      this.alloc(this.cap * 2);
+      this.pos.set(pos); this.norm.set(norm); this.uv.set(uv);
+      this.col.set(col); this.idx.set(idx);
+    }
+  }
+  toGeometry() {
+    if (this.f === 0) return null;
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(this.pos.slice(0, this.f * 12), 3));
+    geo.setAttribute('normal', new THREE.BufferAttribute(this.norm.slice(0, this.f * 12), 3));
+    geo.setAttribute('uv', new THREE.BufferAttribute(this.uv.slice(0, this.f * 8), 2));
+    geo.setAttribute('color', new THREE.BufferAttribute(this.col.slice(0, this.f * 12), 3));
+    geo.setIndex(new THREE.BufferAttribute(this.idx.slice(0, this.f * 6), 1));
+    geo.computeBoundingSphere();
+    return geo;
+  }
+}
+
+const BUILDERS = {
+  opaque: new MeshBuilder(4096),
+  cutout: new MeshBuilder(512),
+  water: new MeshBuilder(1024),
+};
 
 export const CHUNK = 16;
 export const HEIGHT = 64;
@@ -155,27 +197,18 @@ export class World {
         const col = x + z * 16;
         const gx = cx * 16 + x, gz = cz * 16 + z;
         const snowy = !sandy && h >= 42; // 高山雪顶
+        // 矿簇为 2x2x2，同一列内每两层结果相同：按 y>>1 缓存哈希结果
+        let lastPair = -1, pairOre = 0;
         for (let y = 0; y <= h; y++) {
           let id;
           if (y === 0) id = BLOCK.BEDROCK;
           else if (y < h - 3) {
-            id = BLOCK.STONE;
-            // 矿脉与矿囊：2x2x2 团簇哈希，稀有度递增、越深越多
-            const cxx = gx >> 1, cyy = y >> 1, czz = gz >> 1;
-            if (y <= 4 && this.noise.hash3(cxx + 91, cyy + 77, czz - 55) < 0.05) {
-              id = BLOCK.OBSIDIAN;      // 基岩附近的黑曜石
-            } else if (y < 10 && this.noise.hash3(cxx - 31, cyy + 17, czz + 43) < 0.010) {
-              id = BLOCK.GEM_ORE;       // 蓝晶：最深最稀有
-            } else if (y < 16 && this.noise.hash3(cxx + 53, cyy - 29, czz + 19) < 0.012) {
-              id = BLOCK.GOLD_ORE;
-            } else if (y < 30 &&
-                this.noise.hash3(cxx + 7, cyy - 3, czz + 11) < (y < 16 ? 0.022 : 0.012)) {
-              id = BLOCK.IRON_ORE;
-            } else if (y < 40 && this.noise.hash3(cxx - 13, cyy + 37, czz - 7) < 0.028) {
-              id = BLOCK.COAL_ORE;      // 煤：最浅最常见
-            } else if (y < 36 && this.noise.hash3(cxx + 67, cyy + 5, czz + 71) < 0.014) {
-              id = BLOCK.GRAVEL;        // 沙砾矿囊
+            const pair = y >> 1;
+            if (pair !== lastPair) {
+              lastPair = pair;
+              pairOre = this.orePick(gx >> 1, pair, gz >> 1, y);
             }
+            id = pairOre || BLOCK.STONE;
           }
           else if (y < h) id = sandy ? BLOCK.SAND : BLOCK.DIRT;
           else id = sandy ? BLOCK.SAND : snowy ? BLOCK.SNOW : BLOCK.GRASS;
@@ -348,6 +381,19 @@ export class World {
     for (let y = h + 1; y <= topY; y++) setLocal(gx, y, gz, BLOCK.LOG, false);
   }
 
+  // 矿脉与矿囊：2x2x2 团簇哈希，稀有度递增、越深越多。
+  // 深度阈值均为偶数，与 y>>1 团簇对齐，保证簇内一致。
+  orePick(cxx, cyy, czz, y) {
+    const n = this.noise;
+    if (y < 6 && n.hash3(cxx + 91, cyy + 77, czz - 55) < 0.05) return BLOCK.OBSIDIAN;
+    if (y < 10 && n.hash3(cxx - 31, cyy + 17, czz + 43) < 0.010) return BLOCK.GEM_ORE;
+    if (y < 16 && n.hash3(cxx + 53, cyy - 29, czz + 19) < 0.012) return BLOCK.GOLD_ORE;
+    if (y < 30 && n.hash3(cxx + 7, cyy - 3, czz + 11) < (y < 16 ? 0.022 : 0.012)) return BLOCK.IRON_ORE;
+    if (y < 40 && n.hash3(cxx - 13, cyy + 37, czz - 7) < 0.028) return BLOCK.COAL_ORE;
+    if (y < 36 && n.hash3(cxx + 67, cyy + 5, czz + 71) < 0.014) return BLOCK.GRAVEL;
+    return 0;
+  }
+
   ensureData(cx, cz) {
     const k = this.key(cx, cz);
     let c = this.chunks.get(k);
@@ -438,15 +484,14 @@ export class World {
       const d = datas[((lx + 16) >> 4) * 3 + ((lz + 16) >> 4)];
       return d[(lx & 15) + (lz & 15) * 16 + y * 256];
     };
-    const occl = (lx, y, lz) => (PROPS[get(lx, y, lz)].opaque ? 1 : 0);
+    const occl = (lx, y, lz) => OPAQUE_TABLE[get(lx, y, lz)];
 
-    const buckets = {
-      opaque: { pos: [], norm: [], uv: [], col: [], idx: [] },
-      cutout: { pos: [], norm: [], uv: [], col: [], idx: [] },
-      water:  { pos: [], norm: [], uv: [], col: [], idx: [] },
-    };
+    BUILDERS.opaque.reset();
+    BUILDERS.cutout.reset();
+    BUILDERS.water.reset();
 
     const data = c.data;
+    const aos = [1, 1, 1, 1];
     let i = 0;
     for (let y = 0; y < HEIGHT; y++) {
       for (let z = 0; z < 16; z++) {
@@ -454,8 +499,9 @@ export class World {
           const id = data[i];
           if (id === BLOCK.AIR) continue;
           const props = PROPS[id];
-          const b = buckets[props.bucket];
+          const b = BUILDERS[props.bucket];
           const isWater = id === BLOCK.WATER;
+          const opaqueSelf = OPAQUE_TABLE[id];
           // 水面块（上方无水）顶面下沉
           const topY = isWater && get(x, y + 1, z) !== BLOCK.WATER ? 0.86 : 1;
 
@@ -463,44 +509,50 @@ export class World {
             const face = FACES[f];
             const d = face.dir;
             const nb = get(x + d[0], y + d[1], z + d[2]);
-            if (!faceVisible(id, nb)) continue;
+            // 可见性查表：空气可见；不透明或同类邻居剔除
+            if (nb !== BLOCK.AIR && (OPAQUE_TABLE[nb] || nb === id)) continue;
 
             const tile = isWater ? 0 :
               d[1] > 0 ? props.tiles.top : d[1] < 0 ? props.tiles.bottom : props.tiles.side;
 
-            const n = b.pos.length / 3;
-            const aos = [1, 1, 1, 1];
+            b.ensure();
+            const fi = b.f;
+            const pv = fi * 12, uvo = fi * 8, io = fi * 6, vo = fi * 4;
             for (let k = 0; k < 4; k++) {
               const cr = face.corners[k];
-              b.pos.push(
-                x + cr.pos[0],
-                y + (cr.pos[1] === 1 ? topY : 0),
-                z + cr.pos[2]
-              );
-              b.norm.push(d[0], d[1], d[2]);
+              const p3 = pv + k * 3;
+              b.pos[p3] = x + cr.pos[0];
+              b.pos[p3 + 1] = y + (cr.pos[1] === 1 ? topY : 0);
+              b.pos[p3 + 2] = z + cr.pos[2];
+              b.norm[p3] = d[0]; b.norm[p3 + 1] = d[1]; b.norm[p3 + 2] = d[2];
               if (isWater) {
-                b.uv.push(cr.uv[0], cr.uv[1]);
+                b.uv[uvo + k * 2] = cr.uv[0];
+                b.uv[uvo + k * 2 + 1] = cr.uv[1];
               } else {
                 const t = tileUV(tile, cr.uv[0], cr.uv[1]);
-                b.uv.push(t[0], t[1]);
+                b.uv[uvo + k * 2] = t[0];
+                b.uv[uvo + k * 2 + 1] = t[1];
               }
               let bright = 1;
-              if (props.opaque) {
+              if (opaqueSelf) {
                 const s1 = occl(x + cr.s1[0], y + cr.s1[1], z + cr.s1[2]);
                 const s2 = occl(x + cr.s2[0], y + cr.s2[1], z + cr.s2[2]);
                 const co = occl(x + cr.cn[0], y + cr.cn[1], z + cr.cn[2]);
                 const ao = s1 && s2 ? 0 : 3 - (s1 + s2 + co);
                 aos[k] = ao;
                 bright = AO_BRIGHT[ao];
-              }
-              b.col.push(bright, bright, bright);
+              } else aos[k] = 1;
+              b.col[p3] = bright; b.col[p3 + 1] = bright; b.col[p3 + 2] = bright;
             }
             // 依据 AO 选择四边形对角线，避免插值各向异性
             if (aos[0] + aos[3] > aos[1] + aos[2]) {
-              b.idx.push(n, n + 1, n + 3, n, n + 3, n + 2);
+              b.idx[io] = vo; b.idx[io + 1] = vo + 1; b.idx[io + 2] = vo + 3;
+              b.idx[io + 3] = vo; b.idx[io + 4] = vo + 3; b.idx[io + 5] = vo + 2;
             } else {
-              b.idx.push(n, n + 1, n + 2, n + 2, n + 1, n + 3);
+              b.idx[io] = vo; b.idx[io + 1] = vo + 1; b.idx[io + 2] = vo + 2;
+              b.idx[io + 3] = vo + 2; b.idx[io + 4] = vo + 1; b.idx[io + 5] = vo + 3;
             }
+            b.f++;
           }
         }
       }
@@ -512,15 +564,8 @@ export class World {
       water: this.materials.water,
     };
     for (const name of ['opaque', 'cutout', 'water']) {
-      const b = buckets[name];
-      if (b.pos.length === 0) continue;
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(b.pos), 3));
-      geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(b.norm), 3));
-      geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(b.uv), 2));
-      geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(b.col), 3));
-      geo.setIndex(b.pos.length / 3 > 65535 ? new THREE.Uint32BufferAttribute(b.idx, 1) : new THREE.Uint16BufferAttribute(b.idx, 1));
-      geo.computeBoundingSphere();
+      const geo = BUILDERS[name].toGeometry();
+      if (!geo) continue;
       const mesh = new THREE.Mesh(geo, matMap[name]);
       mesh.position.set(cx * 16, 0, cz * 16);
       mesh.matrixAutoUpdate = false;
@@ -543,7 +588,9 @@ export class World {
 
   // ---------- 流式加载 ----------
 
-  update(px, pz, budget = 2) {
+  // meshBudget：每帧最多构建的网格数；dataBudget：每帧最多生成的 chunk 数据数。
+  // 网格构建前先分帧补齐 3x3 邻域数据，避免一帧内同时生成多块地形造成卡顿尖峰。
+  update(px, pz, meshBudget = 1, dataBudget = 3) {
     const ccx = Math.floor(px / 16), ccz = Math.floor(pz / 16);
     if (ccx !== this.lastCX || ccz !== this.lastCZ) {
       this.lastCX = ccx;
@@ -571,10 +618,26 @@ export class World {
     }
 
     let built = 0;
-    while (this.queue.length && built < budget) {
-      const { cx, cz } = this.queue.shift();
-      const c = this.chunks.get(this.key(cx, cz));
-      if (c && c.hasMesh) continue;
+    while (this.queue.length && built < meshBudget) {
+      const { cx, cz } = this.queue[0];
+      const existing = this.chunks.get(this.key(cx, cz));
+      if (existing && existing.hasMesh) {
+        this.queue.shift();
+        continue;
+      }
+      // 分帧补齐邻域数据
+      let missing = 0;
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dz = -1; dz <= 1; dz++) {
+          if (this.chunks.has(this.key(cx + dx, cz + dz))) continue;
+          if (dataBudget > 0) {
+            this.ensureData(cx + dx, cz + dz);
+            dataBudget--;
+          } else missing++;
+        }
+      }
+      if (missing > 0) break; // 数据预算用尽，下一帧继续
+      this.queue.shift();
       this.buildMesh(cx, cz);
       built++;
     }

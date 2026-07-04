@@ -246,20 +246,27 @@ export class Hud {
   }
 
   updateStats(player, survival) {
+    // 每帧调用：值未变化时跳过全部 DOM 写入
+    const hpQ = Math.max(0, Math.ceil(player.hp));
+    const huQ = Math.max(0, Math.ceil(player.hunger));
+    const airQ = player.air < 9.9 ? Math.max(0, Math.ceil(player.air)) : -1;
+    const key = (survival ? 1 : 0) * 100000 + hpQ * 2000 + huQ * 40 + (airQ + 1);
+    if (key === this._statsKey) return;
+    this._statsKey = key;
+
     this.survivalUI = survival;
     this.statsEl.style.display = survival ? '' : 'none';
     if (!survival) return;
     const I = this.statIcons;
     for (let i = 0; i < 10; i++) {
-      const v = player.hp - i * 2;
+      const v = hpQ - i * 2;
       this.heartImgs[i].src = v >= 2 ? I.heartFull : v >= 1 ? I.heartHalf : I.heartEmpty;
-      const f = player.hunger - i * 2;
+      const f = huQ - i * 2;
       this.foodImgs[i].src = f >= 2 ? I.foodFull : f >= 1 ? I.foodHalf : I.foodEmpty;
     }
-    const showBubbles = player.air < 9.9;
     for (let i = 0; i < 10; i++) {
       this.bubbleImgs[i].style.visibility =
-        showBubbles && player.air > i ? 'visible' : 'hidden';
+        airQ >= 0 && airQ > i ? 'visible' : 'hidden';
     }
   }
 

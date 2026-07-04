@@ -261,3 +261,13 @@ export function faceVisible(id, neighborId) {
   if (p.opaque) return false;
   return neighborId !== id;
 }
+
+// 快速查表：网格构建与碰撞的热路径避免对象属性链访问
+export const SOLID_TABLE = new Uint8Array(256);
+export const OPAQUE_TABLE = new Uint8Array(256);
+for (let i = 0; i < PROPS.length; i++) {
+  if (PROPS[i]) {
+    SOLID_TABLE[i] = PROPS[i].solid ? 1 : 0;
+    OPAQUE_TABLE[i] = PROPS[i].opaque ? 1 : 0;
+  }
+}

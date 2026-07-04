@@ -5,7 +5,7 @@
 //   硫磺爆虫 — 敌对，逼近玩家后点燃引信自爆（夜间地表 + 硫磺洞穴）
 
 import * as THREE from 'three';
-import { BLOCK, ITEM, PROPS } from './blocks.js';
+import { BLOCK, ITEM, PROPS, SOLID_TABLE } from './blocks.js';
 import { HEIGHT, SEA } from './world.js';
 import { tileUV } from './textures.js';
 
@@ -38,7 +38,7 @@ export const MOB_TYPES = {
 // 逐轴 AABB 体素碰撞
 function collideMove(world, pos, vel, dt, halfW, height) {
   const res = { hitX: false, hitY: false, hitZ: false, onGround: false };
-  const solid = (x, y, z) => PROPS[world.getBlock(x, y, z)].solid;
+  const solid = (x, y, z) => SOLID_TABLE[world.getBlock(x, y, z)] === 1;
   const maxV = Math.max(Math.abs(vel.x), Math.abs(vel.y), Math.abs(vel.z));
   const steps = Math.min(6, Math.max(1, Math.ceil((maxV * dt) / 0.4)));
   const sdt = dt / steps;

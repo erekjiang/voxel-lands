@@ -2,7 +2,7 @@
 // AABB 与体素网格逐轴碰撞（子步进防止高速穿墙）。
 
 import * as THREE from 'three';
-import { BLOCK, PROPS } from './blocks.js';
+import { BLOCK, SOLID_TABLE } from './blocks.js';
 import { HEIGHT } from './world.js';
 
 const GRAVITY = 32;
@@ -84,7 +84,7 @@ export class Player {
   }
 
   solidAt(x, y, z) {
-    return PROPS[this.world.getBlock(x, y, z)].solid;
+    return SOLID_TABLE[this.world.getBlock(x, y, z)] === 1;
   }
 
   blockAtBody(dy) {

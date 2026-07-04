@@ -112,7 +112,7 @@ body { touch-action: none; }
 }
 .statline { display: flex; justify-content: space-between; width: 100%; }
 .statrow { display: flex; gap: 1px; }
-.statrow img { width: 22px; height: 20px; image-rendering: pixelated; filter: drop-shadow(1px 1px 0 rgba(0,0,0,.6)); }
+.statrow img { width: 22px; height: 20px; image-rendering: pixelated; }
 .statrow.flip { flex-direction: row-reverse; }
 #bubbles img { height: 16px; width: 16px; }
 
@@ -212,7 +212,7 @@ body.touch #stats { bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
   background: radial-gradient(circle, rgba(26, 28, 40, 0.10) 42%, rgba(26, 28, 40, 0.48) 100%);
   border: 2px solid rgba(255, 255, 255, 0.30);
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(0, 0, 0, 0.3);
-  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  /* 注意：不用 backdrop-filter——手机 GPU 上代价极高 */
 }
 #joy::before, #joy::after {
   content: ''; position: absolute; left: 50%;
@@ -242,7 +242,6 @@ body.touch #stats { bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
   box-shadow: 0 5px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.22);
   color: #fff; font-size: 24px; font-weight: bold;
   text-shadow: 0 2px 3px rgba(0, 0, 0, 0.7);
-  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   transition: transform 0.07s, background-color 0.07s, border-color 0.07s;
 }
 .tbtn.on {
