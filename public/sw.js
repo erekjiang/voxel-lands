@@ -3,7 +3,7 @@
 // /assets/ 内容哈希文件不可变，缓存优先；其余同源 GET 缓存优先、后台回填。
 // 安装时解析 index.html 里的资源链接做预缓存，首次访问后即可离线游玩。
 
-const VERSION = 'voxel-lands-v5';
+const VERSION = 'voxel-lands-v6';
 
 async function precache() {
   const cache = await caches.open(VERSION);

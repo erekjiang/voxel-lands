@@ -135,19 +135,16 @@ export class Hud {
     this.onPick = null;
     this.invCells = {};
     const grid = document.getElementById('inv-grid');
+    // 纯文字紧凑清单：名称 + 数量，不放图片
     for (const id of ALL_ITEMS) {
       const cell = document.createElement('button');
       cell.className = 'inv-cell';
       cell.title = itemName(id);
-      const img = document.createElement('img');
-      img.src = icons[id];
-      img.draggable = false;
-      img.onerror = () => { img.style.display = 'none'; };
       const label = document.createElement('span');
+      label.className = 'inv-name';
       label.textContent = itemName(id);
       const cnt = document.createElement('span');
       cnt.className = 'inv-count';
-      cell.appendChild(img);
       cell.appendChild(label);
       cell.appendChild(cnt);
       cell.addEventListener('click', () => {
